@@ -17,8 +17,6 @@
 
 package edu.osu.nlp.chartparser;
 
-import java.lang.Comparable;
-
 /**
  * The data structure that enables trace back
  * by recording the partners in an application

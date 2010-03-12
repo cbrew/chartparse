@@ -20,11 +20,9 @@ package edu.osu.nlp.chartparser;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.lang.Comparable;
 import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.lang.Iterable;
 import java.util.Iterator;
 
 /**
@@ -253,9 +251,8 @@ public class Edge implements Comparable<Edge>  {
     public Iterable<Tree> allTrees() {
 	//  Assignment 2.4 (extra credit) : your code here
 	//  Arrange things so that you return an iterator
-	//  that gives access to all the trees (not just the
-	//  first one)
-	// partially done.
+	//  that gives access to all the trees.
+
 	return new AllTreesIterable(this);
     }
 
@@ -264,8 +261,6 @@ public class Edge implements Comparable<Edge>  {
      * 
      * @param o the object against which this should be compared for equality
      */
-
-
     public boolean equals(Object o) {
 	Edge other = (Edge) o;
 	return (getLeft() == other.getLeft() && 

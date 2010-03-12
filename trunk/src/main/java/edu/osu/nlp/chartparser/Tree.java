@@ -77,7 +77,7 @@ public class Tree {
 
 
     @SuppressWarnings("unused")
-	private void treestring(StringBuilder s,int tab) {
+    private void treestring(StringBuilder s,int tab) {
 	for(int i = 0; i < tab; i++)
 	    s.append(' ');
 	if(children.size() == 1 && children.get(0).children.size() == 0) {
