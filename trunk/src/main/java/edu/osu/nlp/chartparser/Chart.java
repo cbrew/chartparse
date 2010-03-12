@@ -46,7 +46,6 @@ import java.lang.reflect.Constructor;
  * @see <a href="http://www.poplog.org/">http://www.poplog.org/</a> 
  * @see <a href="http://www.poplog.org/gospl/packages/pop11/lib/chart.p">http://www.poplog.org/gospl/packages/pop11/lib/chart.p </a> 
  * @author Chris Brew
- * @version 0.5
  */
 public class Chart {
 
@@ -66,22 +65,16 @@ public class Chart {
     private final List<Rule> rules;
     private String [] sentence;
 
-    // statistics 
-    /**
-     *
-     */
-    /**
-     *
-     */
-    public int completeEdges = 0, partialEdges = 0;
+    // statistics
+
+    public int numCompleteEdges = 0, numPartialEdges = 0;
     
 
     private Strategy strategy = null;
 
     private EdgeMonitor monitor = null;
 
-    
-    private boolean bottomUp;
+    private boolean bottomUp = true;
      
     /**
      * Implements a chart parser
@@ -155,13 +148,11 @@ public class Chart {
     }
 
     /**
-     * Return the edges that span the input string and have one of the desired categories
+     * Find the edges that span the input string and have one of the desired categories
      *
      * @param topCats the desired categories (often this will be a singleton set having element "S")
-     * @return
+     * @return the edges having the desired property
      */
-
-
     public Set<Edge> solutions(Set<String> topCats) {
 	Set<Edge> dest = new TreeSet<Edge>();
 
@@ -246,12 +237,12 @@ public class Chart {
 	    } else {
 		edges.add(e);
 		if(e.iscomplete()){
-		    completeEdges ++;
+		    numCompleteEdges ++;
 		    predictFromComplete(e.getLabel(),e.getLeft());
 		    pairwithpartials(partials.get(e.getLeft()),e);
 		} else {
 		    assert(e.ispartial());
-		    partialEdges++;
+		    numPartialEdges++;
 		    predictFromPartial(e);
 		}
 		return true;
@@ -324,7 +315,7 @@ public class Chart {
     	
     	BottomUpStrategy(Chart ch){myChart = ch; }
 	@Override
-	    public void initialize(String [] words,Set<String> topCats) {
+	public void initialize(String [] words,Set<String> topCats) {
 		int i = 0;
 		for(String word: words) {
 		    agenda.add(Edges.lexical(word,i));
@@ -337,7 +328,9 @@ public class Chart {
          * @param label
          * @param position
          */
-	@Override public void predictFromComplete(String label,int position) {
+	
+        @Override
+        public void predictFromComplete(String label,int position) {
 	    for(Rule r: rules) {
 		if(r.rhs.get(0).equals(label)) {
 		    agenda.add(Edges.empty(r,position));
