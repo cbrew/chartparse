@@ -1,3 +1,7 @@
+OSU's Didactic Chart Parser
+
+
+
 Prereqs: 
 
 Maven
