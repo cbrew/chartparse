@@ -6,6 +6,7 @@
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
   <name>ChartParser</name>
+   <url>http://www.ling.ohio-state.edu/~cbrew/parser/</url>
 	<description>
      Java-based chart parser
   </description>
@@ -13,12 +14,18 @@
       <license>
           <name>Apache license 2.0</name>
           <distribution>repo</distribution>
+          <url>http://www.opensource.org/licenses/apache2.0.php</url>
       </license>
   </licenses>
 	<issueManagement>
     <system>Google Code</system>
     <url>http://code.google.com/p/chartparse/issues/list</url>
   </issueManagement>
+  <scm>
+      <connection>scm:svn:http://chartparse.googlecode.com/svn/trunk/</connection>
+      <developerConnection>scm:svn:https://chartparse.googlecode.com/svn/trunk/</developerConnection>
+      <url>http://chartparse.googlecode.com/svn/trunk/</url>
+  </scm>
   <developers>
         <developer>
             <id>cbrew</id>
@@ -32,8 +39,6 @@
             <timezone>-5</timezone>   
         </developer>
     </developers>
-
-  <url>http://maven.apache.org</url>
     <build>
         <plugins>
             <plugin>
