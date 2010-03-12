@@ -6,6 +6,33 @@
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
   <name>ChartParser</name>
+	<description>
+     Java-based chart parser
+  </description>
+  <licenses>
+      <license>
+          <name>Apache license 2.0</name>
+          <distribution>repo</distribution>
+      </license>
+  </licenses>
+	<issueManagement>
+    <system>Google Code</system>
+    <url>http://code.google.com/p/chartparse/issues/list</url>
+  </issueManagement>
+  <developers>
+        <developer>
+            <id>cbrew</id>
+            <name>Chris Brew</name>
+            <email>cbrew@acm.org</email>
+            <url>http://www.cse.ohio-state.edu/~cbrew</url>
+            <roles>
+                <role>architect</role>
+                <role>developer</role>
+            </roles>
+            <timezone>-5</timezone>   
+        </developer>
+    </developers>
+
   <url>http://maven.apache.org</url>
     <build>
         <plugins>
@@ -54,6 +81,21 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+<reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.6.1</version>
+        <configuration>
+        </configuration>
+      </plugin>
+	 <plugin>
+	        <groupId>org.codehaus.mojo</groupId>
+	        <artifactId>cobertura-maven-plugin</artifactId>
+	      </plugin>
+    </plugins>
+  </reporting>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>

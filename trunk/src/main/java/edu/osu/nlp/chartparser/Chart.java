@@ -336,8 +336,9 @@ public class Chart {
 
 	for(Edge e: c.solutions(topCats)){
 				
-	    Tree t = e.firstTree();
-	    if(t != null)
+            Tree t = e.firstTree();
+
+            if(t != null)
 		System.out.println(t.asString());
 	}
     }   

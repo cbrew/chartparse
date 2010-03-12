@@ -80,8 +80,8 @@ public class RunChart {
        
        
        while((line = in.readLine()) != null) {
-    	   String [] words = line.trim().split(" +");
-		   	parse(words);
+            String [] words = line.trim().split(" +");
+            parse(words);
 
 		   
        }	
