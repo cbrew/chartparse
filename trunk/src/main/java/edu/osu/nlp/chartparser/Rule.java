@@ -27,9 +27,20 @@ import java.util.Arrays;
  */
 
 public class Rule  {
+    /**
+     *
+     */
     public String lhs;
+    /**
+     *
+     */
     public List<String> rhs;
   
+    /**
+     *
+     * @param label
+     * @param rstr
+     */
     public Rule(String label,String rstr) {
 	lhs = label;
 	rhs = Arrays.asList(rstr.trim().split("[ \t]+")); // split by space

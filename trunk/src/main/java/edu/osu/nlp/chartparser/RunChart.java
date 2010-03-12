@@ -67,6 +67,7 @@ public class RunChart {
     /**
      * Runs the chart parser
      * @param args  ignored
+     * @throws IOException
      */
 
 	

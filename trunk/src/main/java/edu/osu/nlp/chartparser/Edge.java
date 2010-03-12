@@ -15,7 +15,6 @@
  *  limitations under the License.
  */
 
-
 package edu.osu.nlp.chartparser;
 
 import java.util.ArrayList;
@@ -51,6 +50,11 @@ public class Edge implements Comparable<Edge>  {
     }
     
 
+    /**
+     *
+     * @param partial
+     * @param complete
+     */
     public Edge(Edge partial,Edge complete) {
 	// fundamental rule
 	this(partial.getLabel(),
@@ -64,11 +68,22 @@ public class Edge implements Comparable<Edge>  {
 
     }
 
+    /**
+     *
+     * @param word
+     * @param start
+     */
     public Edge(String word,int start) {
 	// lexical edge
 	this(word,start,start+1,empty);
     }
 
+    /**
+     *
+     * @param lhs
+     * @param position
+     * @param rhs
+     */
     public Edge(String lhs,int position,List<String> rhs) {
 	// empty edge
 	this(lhs,position,position,rhs);
@@ -97,42 +112,47 @@ public class Edge implements Comparable<Edge>  {
 
 	
 
+    /**
+     *
+     * @return the next category needed by the current edge
+     */
     public String firstNeeded() {
 	return needed.get(0);
     }
 
 
+    /**
+     *
+     * @return all categories needed by the current edge
+     */
     public List<String> getNeeded() {
 	return needed;
     }
     
 
-	/**
-	 * Test whether an edge still lacks anything	
-	 * @return whether the edge is complete or not
-	 */
-	public boolean iscomplete() {
-		return needed.isEmpty();
-    }
+/**
+ * Test whether an edge still lacks anything
+ * @return whether the edge is complete or not
+ */
 
-	
-	/**
-	 * Test whether an edge still lacks anything
-	 * @return whether the edge is complete or not
-	 */
-    public boolean ispartial() {
-    	return ! iscomplete();
-    }
+    public boolean iscomplete() { return needed.isEmpty(); }
+
+/**
+ * Test whether an edge still lacks anything
+ * @return whether the edge is complete or not
+ */
+
+    public boolean ispartial() { return ! iscomplete(); }
 
 
-    /**
-     * Return the first Tree corresponding to an edge
-     *
-     * @return a tree
-     */
+/**
+ * Return the first Tree corresponding to an edge
+ *
+ * @return a tree
+ */
 
     public Tree firstTree() {
-	// generate the first tree.
+        // generate the first tree.
 	// What "first" means depends on the function that orders
 	// TraceEntries. 
 
@@ -145,10 +165,8 @@ public class Edge implements Comparable<Edge>  {
     		return Tree.adjoin(left,right);
     	} else {
     		return new Tree(getLabel());
-			}
-    	}
-    
-    
+	}
+    }
     
     /**
      * Count the trees under an edge
@@ -158,9 +176,7 @@ public class Edge implements Comparable<Edge>  {
 
     public int countTrees() {
 	//  Assignment 2.6
-	//  Count the trees that are rooted at edge. Do not
-	//  do this by enumerating these trees
-
+	//  Count the trees that are rooted at edge.
 
 	if(predecessors.size() > 0) {
 	    int count = 0;
@@ -183,6 +199,7 @@ public class Edge implements Comparable<Edge>  {
      * 
      * @param index the index of the tree to be returned. 
      * Should be less than the number of trees available.
+     * @return
      */
 
     public Tree getTree(int index) {
@@ -222,22 +239,25 @@ public class Edge implements Comparable<Edge>  {
 	
 	private class AllTreesIterator implements Iterator<Tree> {
 	    private int treesRemaining = edge.countTrees();
+            @Override
      	    public boolean hasNext() { return treesRemaining > 0; }
 
+            @Override
 	    public Tree next () { 
 	    	assert(treesRemaining > 0);
 	    	treesRemaining --;
 	    	return edge.getTree(treesRemaining);
 	    }
 
+            @Override
 	    public void remove() {}
-
 	    
 	}
 	
-	public Iterator<Tree> iterator () {
-	    return new AllTreesIterator();
-	}
+            @Override
+            public Iterator<Tree> iterator () {
+                return new AllTreesIterator();
+            }
 	
 };
 
@@ -260,20 +280,41 @@ public class Edge implements Comparable<Edge>  {
      * Equality tester that ignores the predecessor field
      * 
      * @param o the object against which this should be compared for equality
+     * @return
      */
+    @Override
     public boolean equals(Object o) {
-	Edge other = (Edge) o;
+	
+        
+        
+        if ( !(o instanceof Edge) ) return false;
+
+        Edge other = (Edge) o;
 	return (getLeft() == other.getLeft() && 
 			getRight() == other.getRight() && 
 			getLabel().equals(other.getLabel()) && 
 			needed.equals(other.needed));
-    } 
+    }
 
+    /**
+     * The hash code does not compare the predecessors field.
+     * @return an integer
+     */
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 83 * hash + (this.label != null ? this.label.hashCode() : 0);
+        hash = 83 * hash + this.left;
+        hash = 83 * hash + this.right;
+        hash = 83 * hash + (this.needed != null ? this.needed.hashCode() : 0);
+        return hash;
+    }
 
     /**
      * Comparison method that ignores the predecessor field, as needed for sets.
      * 
      * @param other the Edge against which this should be compared for equality
+     * @return
      */
     
     @Override	
@@ -300,7 +341,7 @@ public class Edge implements Comparable<Edge>  {
 
 
     /**
-     * provide edge as string
+     * @return humsn readable string representation of edge
      */
     String asString() {
 	if (iscomplete())
@@ -316,8 +357,5 @@ public class Edge implements Comparable<Edge>  {
 	public SortedSet<TraceEntry> getPredecessors() {
 		return predecessors;
 	}
-
-
-
 
 };

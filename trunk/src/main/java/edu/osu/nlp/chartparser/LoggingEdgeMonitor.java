@@ -17,11 +17,20 @@
 
 package edu.osu.nlp.chartparser;
 
+/**
+ *
+ * @author cbrew
+ */
 public class LoggingEdgeMonitor implements EdgeMonitor{
     private int edgeno = 1;
 
 
 
+    /**
+     *
+     * @param e
+     */
+    @Override
     public void note(Edge e) {System.out.println(edgeno + ":" + e.asString()); edgeno++;}
 
 }

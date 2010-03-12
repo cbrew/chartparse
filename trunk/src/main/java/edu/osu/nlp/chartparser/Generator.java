@@ -45,6 +45,7 @@ public class   Generator {
      *  
      *       
      * @param lhs to generate from
+     * @return
      */
 
     public Tree nextTree(String lhs) {
@@ -74,7 +75,12 @@ public class   Generator {
 	}
     }
 
-   public static void main (String [] args) throws IOException {
+    /**
+     *
+     * @param args
+     * @throws IOException
+     */
+    public static void main(String [] args) throws IOException {
 
        Generator g = new Generator();
        Integer n = Integer.parseInt(args[0]);

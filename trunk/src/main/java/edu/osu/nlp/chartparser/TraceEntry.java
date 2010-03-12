@@ -28,9 +28,20 @@ package edu.osu.nlp.chartparser;
 
 
 public class TraceEntry implements Comparable<TraceEntry> {
-    public Edge partial; 
+    /**
+     * A partial edge ancestor of current edge
+     */
+    public Edge partial;
+    /**
+     * A complete edge ancestor of current edge
+     */
     public Edge complete;
 
+    /**
+     * Create a trace entry from matching partial and complete edges
+     * @param p the partial edge
+     * @param c the complete edge
+     */
     public TraceEntry(Edge p,Edge c) {
 	partial = p; 
 	complete = c; 
@@ -38,8 +49,11 @@ public class TraceEntry implements Comparable<TraceEntry> {
     
     /**
      * compare two edges for ordering
+     * @param other 
+     * @return -1, 0, +1 depending on ordering
      */
 
+    @Override
     public int compareTo(TraceEntry other){
     	int x = partial.compareTo(other.partial);
     	if(x != 0)

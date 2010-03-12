@@ -205,6 +205,7 @@ public class Rules {
      * read a grammar from a textfile
      *
      * @param filename the filename to read from
+     * @return
      */
     public static List<Rule> grammar(String filename)  {
 	try {
@@ -265,6 +266,7 @@ public class Rules {
     
     /**
      * A default grammar read from strings found in this file
+     * @return
      */
     public static List<Rule> english() { 
 	List<Rule> rules = new ArrayList<Rule>();

@@ -30,26 +30,55 @@ import java.util.Collections;
  */
 
 public class Tree {
+    /**
+     *
+     */
     public   final String parent;
+    /**
+     *
+     */
     public   final List<Tree> children;
+    /**
+     *
+     */
     public static final List<Tree> empty = Collections.emptyList();
 
 
     //constructor for internal node
+    /**
+     *
+     * @param p
+     * @param cs
+     */
     public Tree(String p,List<Tree> cs) {
 	parent = p;
 	children = cs;
     }
 
+    /**
+     *
+     * @param p
+     * @param cs
+     */
     public Tree(String p,Tree [] cs) {
 	this(p,Arrays.asList(cs));
     }
 
     // constructor for leaf
-    public Tree(String p) 
+    /**
+     *
+     * @param p
+     */
+    public Tree(String p)
     { this(p,empty); }
 
     // constructor for adjoining two trees
+    /**
+     *
+     * @param p
+     * @param c
+     * @return
+     */
     public static Tree adjoin(Tree p, Tree c) {
 	List<Tree> newchildren = new ArrayList<Tree>(p.children);
 	newchildren.add(c);
@@ -90,6 +119,10 @@ public class Tree {
 	}
     }
 
+    /**
+     *
+     * @return
+     */
     public String asString() {
 	StringBuilder s = new StringBuilder();
 	treestring2(s,0);
@@ -97,6 +130,10 @@ public class Tree {
 	return s.toString();
     }
     
+    /**
+     *
+     * @param args
+     */
     public static void main(String [] args) {
 	Tree [] subtrees = {new Tree("np"),new Tree("vp")}; 
 	Tree t = new Tree("s",subtrees);
