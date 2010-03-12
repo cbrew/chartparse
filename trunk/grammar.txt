@@ -1,0 +1,99 @@
+grammar
+	S (num) -> Np(num case:subj) Vp(num) | S conj S 
+	S (num) -> Np(num case:subj) cop(num) ppart 
+	S (num) -> Np(num case:subj) cop(num) ppart passmarker Np(case:obj) 
+	Np (num case) -> det(num) Nn(num) | Np Pp | pn(num case) 
+	Np -> Np conj Np 
+	Nn(num) -> n(num) | adj n(num) 
+	Vp(num)  -> v(num tr:trans) Np(case:obj) | v(num tr:intrans) | cop(num) adj 
+	Vp(num) -> Vp(num) Pp 
+        Pp -> prep Np(case:obj)
+thatsall
+
+lexicon
+	a det(num:sing) 
+	and conj 	
+	are cop(num:pl) 
+	ball n (num : sing) 
+	big adj
+	bitten ppart 
+	blue adj 
+	boy n(num:sing) 
+	boys n(num:pl) 
+	by passmarker | prep 
+	cage n(num:sing) | v(num:pl tr:trans) 
+	caged v(tr:trans) | ppart 
+	cages n(num:pl) | v(num:sing tr:trans) 
+	cafes n(num:pl) 
+	chris pn(num:sing)
+	clyde pn(num:sing) 
+	computer n(num:sing) 
+	computers n(num:pl) 
+	enormous adj 
+	fifty det(num:pl) 
+	four det(num:pl) 
+	girl n(num:sing)  
+	girls n(num:pl) 
+	green adj 
+	he pn(num:sing case:subj) 
+	her pn(num:sing case:obj) 
+	him pn(num:sing case:obj) 
+	hit v(tr:trans) | ppart 
+	hits v(tr:trans num:sing) 
+	house n(num:sing) 
+	in prep 
+	is cop(num:sing) 
+	little adj 
+	mic pn(num:sing) 
+	micro n(num:sing) 
+	micros n(num:pl) 
+	on prep 
+	one n(num:sing) | pn(num:sing) | det(num:sing) 
+	ones n(num:pl) 
+	pdp11 n(num:sing) 
+	pdp11s n(num:pl) 
+	pigeon n(num:sing) 
+	pigeons n(num:pl) 
+	professors n(num:pl) 
+	program n(num:sing) | v(num:pl tr:trans) 
+	programmed v( tr:trans) | ppart 
+	programs n(num:pl) | v(num:sing tr:trans) 
+	punish v(num:pl tr:trans) 
+	punished v( tr:trans) | ppart 
+	happy adj
+	punishes v(num:sing tr:trans) 
+	ran v(tr:intrans) 
+	rat n(num:sing) 
+	rats n(num:pl) 
+	red adj 
+	reinforce v (num:pl tr:trans) 
+	reinforced v ( tr:trans) | ppart 
+	reinforces v (num:s tr:trans)
+	reward v (num:pl tr:trans)		
+	rewards v (num:sing tr:trans) 	      
+	room n(num:sing) 
+	rooms n(num:pl) 
+	run v(tr:intrans num:pl) 
+	runs v(tr:intrans num:sing)
+	scientists n(num:pl) 
+	sad adj 	   
+	she pn(num:sing case:subj) 
+	steve pn(num:sing) 
+	stuart pn(num:sing) 
+	suffer v(num:pl tr:intrans) 
+	suffered v( tr:intrans) 
+	suffers v(num:sing tr:intrans) 
+	that det(num:sing) 
+	the det 
+	them pn(num:pl case:obj) 
+	these det(num:pl) 
+	they pn(num:pl case:subj) 
+	those det (num:pl) 
+	three det(num:pl) 
+	two det(num:pl) 
+	undergraduates n(num:pl) 
+	universities n(num:pl) 
+	university n(num:sing) 
+	was cop(num:sing)  
+	were cop(num:pl)
+thatsall
