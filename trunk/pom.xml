@@ -7,6 +7,12 @@
   <version>1.0-SNAPSHOT</version>
   <name>ChartParser</name>
    <url>http://www.ling.ohio-state.edu/~cbrew/parser/</url>
+<distributionManagement>
+    <site>
+      <id>ling.ohio-state.edu</id>
+      <url>scp://ling.ohio-state.edu/home/cbrew/public_html/parser</url>
+    </site>
+  </distributionManagement>
 	<description>
      Java-based chart parser
   </description>
