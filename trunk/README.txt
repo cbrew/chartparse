@@ -1,8 +1,24 @@
-OSU's Didactic Chart Parser
+OSU NLP Group's Didactic Chart Parser
+
+ This is a bottom-up chart parser for a fragment of English.
+ It uses the active chart datastructure. The design is based
+ on Steve Isard's <code>LIB CHART</code>, a teaching tool (written in 1983) that
+ comes with the wonderful Poplog AI development environment.
+
+ The key datastructures are containers for partial and complete edges, called
+ partials and completes below. Completes is an array of sets such that all the
+ edges starting at position <code>i</code> of the input string are stored in
+ <code>completes[i]</code>. Partials is the same, except that <code>partial[i]</code>
+ stores all the edges that <b>end</b> at <code>i</code>. This layout is designed
+ to make application of the fundamental rule of chart parsing transparent.
+
+See <a href="http://www.poplog.org/">http://www.poplog.org/</a>
+Ssee <a href="http://www.poplog.org/gospl/packages/pop11/lib/chart.p">http://www.poplog.org/gospl/packages/pop11/lib/chart.p </a>
+
+Author Chris Brew
 
 
-
-Prereqs: 
+Prerequisites
 
 Maven
 Java 6
@@ -12,7 +28,7 @@ Build and run:
 mvn package
 java -jar target/ChartParser-1.0-SNAPSHOT.jar
 
-Output: (extract only)
+Output: (only an extract is shown)
 
 1:the:0-1
 2:pigeons:1-2
@@ -69,21 +85,20 @@ Tree: 4
 
 Some problems for the OSU class
 
-Required
 
-2.1) Why doesn't "the pigeons are punished in the green room" produce a complete parse? Compare "the pigeons are punished by the professors", which does.
-[easy if you look carefully at the grammar: 10pts] 
+
+2.1) Why doesn't "the pigeons are punished in the green room" produce a complete parse? Compare "the pigeons are punished by the professors",
+which does.
 
 2.2) Implement and test the top-down chart parser described in the lecture slides and in chapter 13 of J&M. Measure its performance relative to the
-    bottom-up implementation that I provide. Here performance is measured in the following way:
+bottom-up implementation that I provide. Here performance is measured in the following way:
 
     - your implementation must be correct and complete. That is, it must produce all the edges that are necessary in order to build the correct parses
        for each sentence. Remember that some of the sentences the grammar can generate are ambiguous, so having all the edges for just one parse may
        not be enough.
    - if an implementation is correct (the bottom up parser is), the fewer edges the better,
 
-[will take effort, thought and understanding: 50pts for implementation, 20pts for measuring performance at all, 10pts for devising good
-probe sentences. 5pt bonus if you do something we think is clever.]
+[A solution is in the code provided with the parser]
 
 2.3)  Adjust the interface to the Rules and Chart classes so that the grammar can be read from a text file rather than being hard-coded 
 [easy, 10 pts]
