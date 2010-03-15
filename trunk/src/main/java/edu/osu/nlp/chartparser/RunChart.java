@@ -15,78 +15,90 @@
  *  limitations under the License.
  */
 
+
+
 package edu.osu.nlp.chartparser;
+
+//~--- JDK imports ------------------------------------------------------------
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-
 /**
- * Driver for the OSU CSE 732 chart parser
+ * Driver for the OSU CSE 732 chart parser.
  *
  * @author Chris Brew
  * @version 0.5
  */
-public class RunChart {
+public final class RunChart {
+    /**
+     * to suppress default constructor.
+     */
+    private RunChart() { }
 
     /**
-     * run parser
+     * turn tree printing on or off.
      */
 
+    private static boolean     printTrees;
 
-    private static boolean printTrees;
+    /**
+     * possibly print trees to a stream.
+     */
     private static PrintStream treesOut;
 
-    private static void parse(String [] words) throws IOException { 
-	
-	
+    /**
+     * run parser.
+     * @param words the sentence to parse
+     * @throws IOException If an input or output exception occurred
+     */
+    private static void parse(final String[] words) throws IOException {
+        Set<String> topCats = Collections.singleton("S");
+        Chart       c       = new Chart(words, topCats);
 
-	Set<String> topCats = Collections.singleton("S");
-	
-	Chart c = new Chart(words,topCats);
+        treesOut.println(Arrays.asList(words));
 
+        for (Edge e : c.solutions(topCats)) {
+            int treeNum = 0;
 
-	treesOut.println(Arrays.asList(words));
-	for(Edge e: c.solutions(topCats)) {
-	    int treeNum = 0;
-	     if(printTrees) 
-	    	for(Tree t: e.allTrees()){
-		    treesOut.println("Tree: " + treeNum);
-		    treeNum++;
-		    treesOut.println(t.asString());
-		}
-	}
+            if (printTrees) {
+                for (Tree t : e.allTrees()) {
+                    treesOut.println("Tree: " + treeNum);
+                    treeNum++;
+                    treesOut.println(t.asString());
+                }
+            }
+        }
     }
 
-
     /**
-     * Runs the chart parser
+     * Runs the chart parser on a file of sentences.
      * @param args  ignored
-     * @throws IOException
+     * @throws IOException If an input or output exception occurred.
      */
+    public static void main(final String[] args) throws IOException {
+        String sentenceFile = "sentences.txt";
+        String line;
 
-	
-	public static void main(String [] args) throws IOException {
-       String sentenceFile = "sentences.txt";
-       String line;
-       treesOut = System.out;
-       BufferedReader in  = new BufferedReader(new FileReader(sentenceFile));
-       ResourceBundle bundle = ResourceBundle.getBundle("Chart");
-       printTrees = bundle.getString("parser.printTrees").equals("true");
-       
-       
-       while((line = in.readLine()) != null) {
-            String [] words = line.trim().split(" +");
+        treesOut = System.out;
+
+        BufferedReader in     = new BufferedReader(
+                new FileReader(sentenceFile));
+        ResourceBundle bundle = ResourceBundle.getBundle("Chart");
+
+        printTrees = bundle.getString("parser.printTrees").equals("true");
+
+        while ((line = in.readLine()) != null) {
+            String[] words = line.trim().split(" +");
+
             parse(words);
-
-		   
-       }	
-   }
-};
-
-
+        }
+    }
+}

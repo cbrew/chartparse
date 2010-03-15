@@ -50,47 +50,43 @@ import java.util.TreeSet;
  */
 public class Chart {
 
-
     /**
      * tracks statistics for complete edges.
      */
     private int numCompleteEdges = 0;
 
-   /**
-    * accessor for number of complete edges.
-    * @return number of complete edges
-    */
+    /**
+     * accessor for number of complete edges.
+     * @return number of complete edges
+     */
     public final int getNumCompleteEdges() {
         return numCompleteEdges;
     }
     /**
      * tracks statistics for partial edges.
      */
-    private int numPartialEdges  = 0;
+    private int numPartialEdges = 0;
 
     /**
-    * accessor for number of partial edges.
-    * @return number of partial edges
-    */
-     public final int getNumPartialEdges() {
+     * accessor for number of partial edges.
+     * @return number of partial edges
+     */
+    public final int getNumPartialEdges() {
         return numPartialEdges;
     }
-
     /**
      * will be set to a class that provides a strategy.
      */
-    private Strategy strategy         = null;
+    private Strategy strategy = null;
     /**
      * may be set to a class that tracks the arrival of edges.
      */
     private EdgeMonitor monitor = null;
-
     /**
      * controls the strategy adopted by the chart parser.
      *
      */
     private boolean bottomUp = true;
-
     /**
      * the length of the input string.
      */
@@ -98,61 +94,57 @@ public class Chart {
     /**
      * store for agenda.
      */
-    private final Queue < Edge > agenda;
-
+    private final Queue<Edge> agenda;
     /**
      * store for complete edges.
      */
-    private final ArrayList < Set < Edge > > completes;
+    private final ArrayList<Set<Edge>> completes;
     /**
      * store for partial edges.
      */
-    private final ArrayList < Set < Edge > > partials;
-
+    private final ArrayList<Set<Edge>> partials;
     /**
      * the grammar used.
      */
-    private final List < Rule > rules;
+    private final List<Rule> rules;
     /**
      * the sentence being parsed.
      */
-    private String[]         sentence;
+    private String[] sentence;
 
     /**
      * Implements a chart parser.
      * @param words the words to be parsed
      * @param topCats the allowed root categories
      */
-    public Chart(final String[] words, final Set < String > topCats) {
-        ResourceBundle bundle      = ResourceBundle.getBundle("Chart");
-        String         grammarFile = bundle.getString("parser.grammar");
+    public Chart(final String[] words, final Set<String> topCats) {
+        ResourceBundle bundle = ResourceBundle.getBundle("Chart");
+        String grammarFile = bundle.getString("parser.grammar");
 
         bottomUp = bundle.getString("parser.bottomUp").equals("true");
 
         try {
             if (bundle.getString("parser.monitorEdges").equals("true")) {
-                Class < ? >       consClass  =
+                Class<?> consClass =
                         Class.forName(bundle.getString("parser.monitorClass"));
-                Class < ? > []     argClasses = {};
-                Object[]       args       = {};
-                Constructor < ? > cons =
-                        (Constructor < ? >)
-                        consClass.getConstructor(argClasses);
+                Class<?>[] argClasses = {};
+                Object[] args = {};
+                Constructor<?> cons =
+                        (Constructor<?>) consClass.getConstructor(argClasses);
 
                 monitor = (EdgeMonitor) cons.newInstance(args);
             }
         } catch (Exception e) {
             System.out.println("Failed to find edge monitor class"
-                    +
-                    " as configured: exiting!");
+                    + " as configured: exiting!");
             System.exit(-1);
         }
 
-        numWords  = words.length;
-        completes = new ArrayList < Set < Edge > >(numWords + 1);
-        partials  = new ArrayList < Set < Edge > >(numWords + 1);
-        sentence  = words;
-        agenda    = new LinkedList < Edge > ();
+        numWords = words.length;
+        completes = new ArrayList<Set<Edge>>(numWords + 1);
+        partials = new ArrayList<Set<Edge>>(numWords + 1);
+        sentence = words;
+        agenda = new LinkedList<Edge>();
 
         // read rules from grammar file.
         if (bundle.getString("parser.useInternalGrammar").equals("true")) {
@@ -162,8 +154,8 @@ public class Chart {
         }
 
         for (int i = 0; i <= numWords; i++) {
-            completes.add(new TreeSet < Edge >());
-            partials.add(new TreeSet < Edge >());
+            completes.add(new TreeSet<Edge>());
+            partials.add(new TreeSet<Edge>());
         }
 
         if (bottomUp) {
@@ -175,7 +167,7 @@ public class Chart {
         strategy.initialize(words, topCats);
 
         while (!(agenda.isEmpty())) {
-            Edge    e            = agenda.remove();
+            Edge e = agenda.remove();
             boolean incorporated = strategy.incorporate(e);
 
             if ((monitor != null) && incorporated) {
@@ -192,8 +184,8 @@ public class Chart {
      * a singleton set having element "S").
      * @return the edges having the desired property
      */
-    public final Set < Edge > solutions( final Set < String > topCats) {
-        Set < Edge > dest = new TreeSet < Edge >();
+    public final Set<Edge> solutions(final Set<String> topCats) {
+        Set<Edge> dest = new TreeSet<Edge>();
 
         for (Edge e : completes.get(0)) {
             if (topCats.contains(e.getLabel()) && (e.getLeft() == 0)
@@ -212,7 +204,7 @@ public class Chart {
      * @param complete the complete edge to pair
      * @param ps the collection of complete edges that might match
      */
-    private void pairwithpartials(final Set < Edge > ps, final Edge complete) {
+    private void pairwithpartials(final Set<Edge> ps, final Edge complete) {
         for (Edge partial : ps) {
             if (partial.firstNeeded().equals(complete.getLabel())) {
                 agenda.add(Edges.fundamental(partial, complete));
@@ -227,7 +219,7 @@ public class Chart {
      * @param partial the partial edge to pair
      * @param cs the collection of complete edges thar might match
      */
-    private void pairwithcompletes(final Edge partial, final Set < Edge > cs) {
+    private void pairwithcompletes(final Edge partial, final Set<Edge> cs) {
         for (Edge complete : cs) {
             if (partial.firstNeeded().equals(complete.getLabel())) {
                 agenda.add(Edges.fundamental(partial, complete));
@@ -239,9 +231,9 @@ public class Chart {
      * Test driver for chart.
      * @param args not used
      */
-    public static void main(String[] args) {
-        Set < String > topCats = Collections.singleton("S");
-        Chart       c       = new Chart(args, topCats);
+    public static void main(final String[] args) {
+        Set<String> topCats = Collections.singleton("S");
+        Chart c = new Chart(args, topCats);
 
         for (Edge e : c.solutions(topCats)) {
             Tree t = e.firstTree();
@@ -256,17 +248,24 @@ public class Chart {
      * A bottom-up strategy for the parser.
      */
     public class BottomUpStrategy extends Strategy {
+
+        /**
+         * Create a strategy to apply to a chart.
+         * @param ch the chart that the strategy works on
+         */
         BottomUpStrategy(final Chart ch) {
-            myChart = ch;
+            setMyChart(ch);
         }
 
         /**
-         * Initialization for bottom-up strategy
-         * @param words
-         * @param topCats
+         * Initialization for bottom-up strategy.
+         * @param words the sentence to be tagged
+         * @param topCats the allowable root categories.
          */
         @Override
-        public final void initialize(String[] words, Set < String > topCats) {
+        public final void initialize(
+                final String[] words,
+                final Set<String> topCats) {
             int i = 0;
 
             for (String word : words) {
@@ -278,13 +277,16 @@ public class Chart {
         /**
          * the bottom-up strategy predicts rule invocations here.
          *
-         * @param label
-         * @param position
+         * @param label the label of the complete edge
+         * @param position the position at which the predictions
+         *  should be made.
          */
         @Override
-        public void predictFromComplete(String label, int position) {
+        public final void predictFromComplete(
+                final String label,
+                final int position) {
             for (Rule r : rules) {
-                if (r.rhs.get(0).equals(label)) {
+                if (r.getRhs().get(0).equals(label)) {
                     agenda.add(Edges.empty(r, position));
                 }
             }
@@ -293,16 +295,15 @@ public class Chart {
         /**
          * The bottom-up strategy doesn't make predictions from
          * partials, but it does pair them with the corresponding
-         * completes
+         * completes.
          *
-         * @param edge
+         * @param edge the edge from which predictions should be made
          */
         @Override
-        public void predictFromPartial(Edge edge) {
+        public final void predictFromPartial(final Edge edge) {
             pairwithcompletes(edge, completes.get(edge.getRight()));
         }
     }
-
 
     /**
      * A class providing a partial implementation of parsing strategies.
@@ -311,35 +312,39 @@ public class Chart {
     public abstract class Strategy {
 
         /**
-         * the chart that the strategy owns
+         * the chart that the strategy owns.
          */
-        protected Chart myChart;
+        private Chart myChart;
 
         /**
-         * called to set up the parser with a string of words
+         * called to set up the parser with a string of words.
          *
-         * @param words
-         * @param topCats
+         * @param words the sentence
+         * @param topCats the allowed root categories
          */
-        public abstract void initialize(String[] words, Set<String> topCats);
+        public abstract void initialize(
+                final String[] words,
+                final Set<String> topCats);
 
         /**
          * called when a complete edge is added to the chart
          * in order to do any necessary prediction of rules
-         * that might apply to it
+         * that might apply to it.
          *
-         * @param label
-         * @param position
+         * @param label the label of the complete edge
+         * @param position the position at which the complete edge ends
          */
+        public abstract void predictFromComplete(
+                final String label,
+                final int position);
 
-	public abstract void predictFromComplete(String label,int position);
-	
         /**
          * called when a partial edge is added to the chart
+         * in order to make any necessary predictions.
          *
-         * @param e
+         * @param e the edge from which predictions are made
          */
-        public abstract void predictFromPartial(Edge e);
+        public abstract void predictFromPartial(final Edge e);
 
         /**
          * The main driver procedure that adds edges to the chart and
@@ -348,8 +353,8 @@ public class Chart {
          * @param e an edge to incorporate
          * @return whether the chart grew
          */
-        public boolean incorporate(Edge e) {
-            TreeSet < Edge > edges;
+        public final boolean incorporate(final Edge e) {
+            TreeSet<Edge> edges;
 
             if (e.iscomplete()) {
                 edges = (TreeSet<Edge>) completes.get(e.getLeft());
@@ -371,7 +376,7 @@ public class Chart {
                     predictFromComplete(e.getLabel(), e.getLeft());
                     pairwithpartials(partials.get(e.getLeft()), e);
                 } else {
-                    assert(e.ispartial());
+                    assert e.ispartial();
                     numPartialEdges++;
                     predictFromPartial(e);
                 }
@@ -379,23 +384,41 @@ public class Chart {
                 return true;
             }
         }
+
+        /**
+         * @return myChart
+         */
+        public final Chart getMyChart() {
+            return myChart;
+        }
+
+        /**
+         * @param ch myChart to set
+         */
+        public final void setMyChart(final Chart ch) {
+            this.myChart = ch;
+        }
     }
 
-
-    ;
-
     /**
-     * A top down strategy for the parser
+     * A top down strategy for the parser.
      */
     public class TopDownStrategy extends Strategy {
-        TopDownStrategy(Chart ch) {
-            myChart = ch;
+
+        /**
+         * create a strategy and associate it with a chart.
+         * @param ch the chart to which the strategy applies
+         */
+        TopDownStrategy(final Chart ch) {
+            setMyChart(ch);
         }
 
         @Override
-        public void initialize(String[] words, Set < String > topCats) {
+        public final void initialize(
+                final String[] words,
+                final Set<String> topCats) {
             for (Rule r : rules) {
-                if (topCats.contains(r.lhs)) {
+                if (topCats.contains(r.getLhs())) {
                     agenda.add(Edges.empty(r, 0));
                 }
             }
@@ -406,49 +429,56 @@ public class Chart {
          * complete edges, because all the relevant ones are generated by
          * top down prediction.
          *
-         * @param label
-         * @param position
+         * @param label category to predict from
+         * @param position position at which to predict
          */
         @Override
-        public void predictFromComplete(String label, int position) { /* nothing needed here */
+        public void predictFromComplete(
+                final String label,
+                final int position) {
+            /* nothing needed here */
         }
 
         /**
-         * The procedure that implements the predict and scan parts
+         * The method that implements the predict and scan parts
          * of Earley's algorithm.
-         *
-         * @param e
+         * @param e the edge to predict from
          */
         @Override
-        public void predictFromPartial(Edge e) {
+        public final void predictFromPartial(final Edge e) {
             predict(e);
             scan(e);
         }
 
-        private void scan(Edge e) {
+        /**
+         * The scan part of Earley's algorithm.
+         * @param e the edge to scan
+         */
+        private void scan(final Edge e) {
             int position = e.getLeft();
 
-            if ((position < numWords) && e.firstNeeded().equals(sentence[position])) {
+            if ((position < numWords)
+                    && e.firstNeeded().equals(sentence[position])) {
                 Edge lex = Edges.lexical(sentence[position], position);
 
                 agenda.add(lex);
             }
         }
 
-        private void predict(Edge e) {
+        /**
+         * The predict part of Earley's algorithm.
+         * @param e the edge to predict new empty edges from
+         */
+        private void predict(final Edge e) {
 
             // this is very unguided, makes many hypotheses without looking at
             // input string.
             for (Rule r : rules) {
-                if (r.lhs.equals(e.firstNeeded())) {
+                if (r.getLhs().equals(e.firstNeeded())) {
                     agenda.add(Edges.empty(r, e.getRight()));
                 }
             }
         }
     }
-
-
-    ;
-    ;
 }
 

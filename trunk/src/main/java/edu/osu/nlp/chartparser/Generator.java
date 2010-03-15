@@ -15,79 +15,99 @@
  *  limitations under the License.
  */
 
+
+
 package edu.osu.nlp.chartparser;
-import java.io.*;
-import java.util.Collection;
+
+
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Random;
 
 /**
- * The OSU CSE 732 generator
+ * The OSU CSE 732 generator.
  *
  * @author Chris Brew
  * @version 0.5
  */
-public class   Generator {
-
-
-    private static final Collection<Rule> rules = Rules.grammar("grammar.txt"); // hard-wired
-    private static final Random rnd = new Random(0x123456);  // always use same seed, for ease of debugging
+public class Generator {
 
     /**
-     * Create a generator
+     * hard-wired grammar.
+     */
+    private static final Collection<Rule> RULES = Rules.grammar("grammar.txt");
+    /**
+     * random number generator.
+     */
+    private final Random rnd;
+
+    /**
+     * Create a generator with Java's default seed.
      */
     public Generator() {
-
+      rnd = new Random();
+    }
+    /**
+     * Create a generator.
+     * @param seed if <code>seed != 0</code> use it, else whatever Java gives
+     */
+     public Generator(final int seed) {
+             rnd = new Random(seed);
     }
 
     /**
      * randomly generate the next tree based on a given lhs.
-     *  
-     *       
+     *
+     *
      * @param lhs to generate from
-     * @return
+     * @return randomly generated tree
      */
+    public final Tree nextTree(final String lhs) {
 
-    public Tree nextTree(String lhs) {
-	
+        // look up relevant rules for lhs.
+        // with a different organization of the grammar this
+        // would be a hash table lookup, and maybe a bit faster
+        ArrayList<Rule> relevant = new ArrayList<Rule>();
 
-	// look up relevant rules for lhs. 
-	// with a different organization of the grammar this
-	// would be a hash table lookup, and maybe a bit faster
-	ArrayList<Rule> relevant = new ArrayList<Rule> ();
-	for(Rule r: rules) {
-	    if(r.lhs.equals(lhs)) {
-		relevant.add(r);
-	    }
-	}
+        for (Rule r : RULES) {
+            if (r.getLhs().equals(lhs)) {
+                relevant.add(r);
+            }
+        }
 
-	if(relevant.size() == 0) {
-	    // we have a leaf
-	    return new Tree(lhs);
-	} else {
-	    // we have an internal node whose subtrees must be generated
-	    ArrayList<Tree> subtrees = new ArrayList<Tree>();
-	    Rule r = relevant.get(rnd.nextInt(relevant.size()));
-	    for(String clhs: r.rhs) {
-		subtrees.add(nextTree(clhs));
-	    }			  
-	    return new Tree(lhs,subtrees);
-	}
+        if (relevant.size() == 0) {
+
+            // we have a leaf
+            return new Tree(lhs);
+        } else {
+            // we have an internal node whose subtrees must be generated
+            ArrayList<Tree> subtrees = new ArrayList<Tree>();
+            Rule            r        = relevant.get(
+                    rnd.nextInt(relevant.size()));
+
+            for (String clhs : r.getRhs()) {
+                subtrees.add(nextTree(clhs));
+            }
+
+            return new Tree(lhs, subtrees);
+        }
     }
 
     /**
      *
-     * @param args
-     * @throws IOException
+     * @param args <code>args[0]</code> integer saying how many sentences
+     * @throws IOException if output routines fail
      */
-    public static void main(String [] args) throws IOException {
+    public static void main(final String[] args) throws IOException {
+        // always use same seed, for ease of debugging
+        final int defaultSeed = 0x123456;
+        Generator g = new Generator(defaultSeed);
+        Integer   n = Integer.parseInt(args[0]);
 
-       Generator g = new Generator();
-       Integer n = Integer.parseInt(args[0]);
+        for (int i = 0; i < n; i++) {
+            System.out.println(g.nextTree("S").asString());
+        }
+    }
+}
 
-       for(int i = 0; i < n; i++)
-	   System.out.println(g.nextTree("S").asString());
-   }
-
-
-};

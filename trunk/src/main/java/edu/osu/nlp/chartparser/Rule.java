@@ -14,38 +14,68 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
+
+
 package edu.osu.nlp.chartparser;
 
-import java.util.List;
+
 import java.util.Arrays;
+import java.util.List;
 
 /**
- * Data structure representing phrase structure rules
- * 
+ * Data structure representing phrase structure rules.
+ *
  * @author Chris Brew
  * @version 0.5
  */
+public class Rule {
 
-public class Rule  {
     /**
-     *
+     * the string representing the left hand side.
      */
-    public String lhs;
+    private String lhs;
     /**
-     *
+     * a sequence of categories for the right hand side.
      */
-    public List<String> rhs;
-  
+    private List<String> rhs;
+
     /**
-     *
-     * @param label
-     * @param rstr
+     * Create a rule from two strings.
+     * @param label the left hand side of the rule
+     * @param rstr  the right hand side of the rule
      */
-    public Rule(String label,String rstr) {
-	lhs = label;
-	rhs = Arrays.asList(rstr.trim().split("[ \t]+")); // split by space
+    public Rule(final String label, final String rstr) {
+        lhs = label;
+        rhs = Arrays.asList(rstr.trim().split("[ \t]+"));    // split by space
     }
 
-    
+    /**
+     * @return the lhs
+     */
+    public final String getLhs() {
+        return lhs;
+    }
 
+    /**
+     * @param lh the lhs to set
+     */
+    public final void setLhs(final String lh) {
+        this.lhs = lh;
+    }
+
+    /**
+     * @return the rhs
+     */
+    public final List<String> getRhs() {
+        return rhs;
+    }
+
+    /**
+     * @param rh the rhs to set
+     */
+    public final void setRhs(final List<String> rh) {
+        this.rhs = rh;
+    }
 }
+

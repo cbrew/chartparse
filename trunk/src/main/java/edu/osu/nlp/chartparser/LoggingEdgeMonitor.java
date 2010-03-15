@@ -15,22 +15,30 @@
  *  limitations under the License.
  */
 
+
+
 package edu.osu.nlp.chartparser;
 
 /**
- *
+ * Fixture allowing us to see edges printed out as they are made.
  * @author cbrew
  */
-public class LoggingEdgeMonitor implements EdgeMonitor{
+public class LoggingEdgeMonitor implements EdgeMonitor {
+    /**
+     * keeps track of the number of edges seen.
+     */
     private int edgeno = 1;
 
-
-
     /**
-     *
-     * @param e
+     * notice when an edge is incorporated.
+     * @param e the edge just seen
      */
     @Override
-    public void note(Edge e) {System.out.println(edgeno + ":" + e.asString()); edgeno++;}
-
+    public final void note(final Edge e) {
+        System.out.println(edgeno + ":" + e.asString());
+        edgeno++;
+    }
 }
+
+
+

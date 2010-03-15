@@ -15,6 +15,8 @@
  *  limitations under the License.
  */
 
+
+
 package edu.osu.nlp.chartparser;
 
 /**
@@ -25,42 +27,69 @@ package edu.osu.nlp.chartparser;
  * @author Chris Brew
  * @version 0.5
  */
-
-
 public class TraceEntry implements Comparable<TraceEntry> {
-    /**
-     * A partial edge ancestor of current edge
-     */
-    public Edge partial;
-    /**
-     * A complete edge ancestor of current edge
-     */
-    public Edge complete;
 
     /**
-     * Create a trace entry from matching partial and complete edges
+     * A complete edge ancestor of current edge.
+     */
+    private Edge complete;
+    /**
+     * complete edge ancestor of current edge.
+     */
+    private Edge partial;
+
+    /**
+     * Create a trace entry from matching partial and complete edges.
      * @param p the partial edge
      * @param c the complete edge
      */
-    public TraceEntry(Edge p,Edge c) {
-	partial = p; 
-	complete = c; 
+    public TraceEntry(final Edge p, final Edge c) {
+        partial  = p;
+        complete = c;
     }
-    
+
     /**
-     * compare two edges for ordering
-     * @param other 
+     * compare two edges for ordering.
+     * @param other the edge to compare with the current one
      * @return -1, 0, +1 depending on ordering
      */
-
     @Override
-    public int compareTo(TraceEntry other){
-    	int x = partial.compareTo(other.partial);
-    	if(x != 0)
-    		return x;
-    	else
-    		return complete.compareTo(other.complete);
-	
+    public final int compareTo(final TraceEntry other) {
+        int x = partial.compareTo(other.partial);
+
+        if (x != 0) {
+            return x;
+        } else {
+            return complete.compareTo(other.complete);
+        }
     }
 
-};
+    /**
+     * @return the complete
+     */
+    public final Edge getComplete() {
+        return complete;
+    }
+
+    /**
+     * @param c the complete to set
+     */
+    public final void setComplete(final Edge c) {
+        this.complete = c;
+    }
+
+    /**
+     * @return the partial
+     */
+    public final Edge getPartial() {
+        return partial;
+    }
+
+    /**
+     * @param p the partial to set
+     */
+    public final void setPartial(final Edge p) {
+        this.partial = p;
+    }
+}
+

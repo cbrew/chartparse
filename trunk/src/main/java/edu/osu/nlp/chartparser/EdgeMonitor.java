@@ -15,15 +15,18 @@
  *  limitations under the License.
  */
 
+
+
 package edu.osu.nlp.chartparser;
 
 /**
- * Interface for classes that monitor the incorporation of edges
+ * Interface for classes that monitor the incorporation of edges.
  */
 public interface EdgeMonitor {
+
     /**
      *
-     * @param e
+     * @param e the edge
      */
     void note(Edge e);
 }

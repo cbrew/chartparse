@@ -15,130 +15,172 @@
  *  limitations under the License.
  */
 
+
+
 package edu.osu.nlp.chartparser;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 /**
- * The data structure for a syntax tree
+ * The data structure for a syntax tree.
  *
  * @author Chris Brew
  * @version 0.5
  */
-
 public class Tree {
-    /**
-     *
-     */
-    public   final String parent;
-    /**
-     *
-     */
-    public   final List<Tree> children;
-    /**
-     *
-     */
-    public static final List<Tree> empty = Collections.emptyList();
-
-
-    //constructor for internal node
-    /**
-     *
-     * @param p
-     * @param cs
-     */
-    public Tree(String p,List<Tree> cs) {
-	parent = p;
-	children = cs;
-    }
 
     /**
-     *
-     * @param p
-     * @param cs
+     * empty list.
      */
-    public Tree(String p,Tree [] cs) {
-	this(p,Arrays.asList(cs));
-    }
+    public static final List<Tree> EMPTY = Collections.emptyList();
 
-    // constructor for leaf
     /**
-     *
-     * @param p
+     * The children.
      */
-    public Tree(String p)
-    { this(p,empty); }
+    private final List<Tree> children;
 
-    // constructor for adjoining two trees
     /**
-     *
-     * @param p
-     * @param c
-     * @return
+     * The mother node.
      */
-    public static Tree adjoin(Tree p, Tree c) {
-	List<Tree> newchildren = new ArrayList<Tree>(p.children);
-	newchildren.add(c);
-	Tree tr = new Tree (p.parent,newchildren);
-	
-	return tr;
+    private final String parent;
+
+    /**
+     * constructor for leaf.
+     * @param p the leaf label
+     */
+    public Tree(final String p) {
+        this(p, EMPTY);
     }
 
 
-
-    private void treestring2(StringBuilder s,int tab) {
-	s.append('\n');
-	for(int i = 0; i < tab; i++)
-	    s.append(' ');
-	s.append('(');
-	if(children.size() == 1 && children.get(0).children.size() == 0) {
-	    s.append(parent + " " + children.get(0).parent);
-	} else {
-	    s.append(parent);
-	    for(Tree child: children)
-		child.treestring2(s,tab+1);
-	}
-	s.append(')');
+    /**
+     * constructor for internal node.
+     * @param p the mother node label
+     * @param cs the children
+     */
+    public Tree(final String p, final List<Tree> cs) {
+        parent   = p;
+        children = cs;
     }
 
+    /**
+     * convenience constructor to allow <code>Tree [] cs</code>.
+     * @param p label for mother node
+     * @param cs children
+     */
+    public Tree(final String p, final Tree[] cs) {
+        this(p, Arrays.asList(cs));
+    }
 
+    /**
+     * constructor for combining two trees.
+     * @param p partial edge
+     * @param c complete edge
+     * @return resulting tree
+     */
+    public static Tree adjoin(final Tree p, final Tree c) {
+        List<Tree> newchildren = new ArrayList<Tree>(p.children);
+
+        newchildren.add(c);
+
+        Tree tr = new Tree(p.parent, newchildren);
+
+        return tr;
+    }
+
+    /**
+     * create string representation of tree.
+     * This one does surrounding brackets.
+     * @param s the <code>the StringBuilder</code> we are writing to.
+     * @param tab the number of spaces to prefix line with.
+     */
+    private void treestring2(final StringBuilder s, final int tab) {
+        s.append('\n');
+
+        for (int i = 0; i < tab; i++) {
+            s.append(' ');
+        }
+
+        s.append('(');
+
+        if ((children.size() == 1) && (children.get(0).children.size() == 0)) {
+            s.append(parent + " " + children.get(0).parent);
+        } else {
+            s.append(parent);
+
+            for (Tree child : children) {
+                child.treestring2(s, tab + 1);
+            }
+        }
+
+        s.append(')');
+    }
+
+    /**
+     * create string representation of tree.
+     *
+     * This one doesn't do brackets.
+     *
+     * @param s the <code>the StringBuilder</code> we are writing to.
+     * @param tab the number of spaces to prefix line with.
+     */
     @SuppressWarnings("unused")
-    private void treestring(StringBuilder s,int tab) {
-	for(int i = 0; i < tab; i++)
-	    s.append(' ');
-	if(children.size() == 1 && children.get(0).children.size() == 0) {
-	    s.append(parent + " " + children.get(0).parent + "\n");
-	} else {
-	    s.append(parent);
-	    s.append('\n');
-	    for(Tree child: children)
-		child.treestring(s,tab+1);
-	}
+    private void treestring(final StringBuilder s, final int tab) {
+        for (int i = 0; i < tab; i++) {
+            s.append(' ');
+        }
+
+        if ((children.size() == 1) && (children.get(0).children.size() == 0)) {
+            s.append(parent + " " + children.get(0).parent + "\n");
+        } else {
+            s.append(parent);
+            s.append('\n');
+
+            for (Tree child : children) {
+                child.treestring(s, tab + 1);
+            }
+        }
     }
 
     /**
-     *
-     * @return
+     * The string representation of a tree.
+     * @return the string.
      */
-    public String asString() {
-	StringBuilder s = new StringBuilder();
-	treestring2(s,0);
+    public final String asString() {
+        StringBuilder s = new StringBuilder();
 
-	return s.toString();
+        treestring2(s, 0);
+
+        return s.toString();
     }
-    
+
     /**
-     *
-     * @param args
+     * Test driver for printing trees.
+     * @param args unused
      */
-    public static void main(String [] args) {
-	Tree [] subtrees = {new Tree("np"),new Tree("vp")}; 
-	Tree t = new Tree("s",subtrees);
+    public static void main(final String[] args) {
+        Tree[] subtrees = {new Tree("np"), new Tree("vp") };
+        Tree   t        = new Tree("s", subtrees);
 
-	System.out.println(t.asString());
+        System.out.println(t.asString());
     }
 
+    /**
+     * @return the children
+     */
+    public final List<Tree> getChildren() {
+        return children;
+    }
+
+    /**
+     * @return the parent
+     */
+    public final String getParent() {
+        return parent;
+    }
 }
+
+

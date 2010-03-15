@@ -15,54 +15,62 @@
  *  limitations under the License.
  */
 
+
+
 package edu.osu.nlp.chartparser;
 
-
 /**
- * Static factory methods for making edges. 
+ * Static factory methods for making edges.
  *
  * @author Chris Brew
- * @version 0.5
  */
+public final class Edges {
 
-public class Edges {
     /**
-     * Create a length 1 lexical edge for a word
-     *
-     * @param word the word 
-     * @param start the start position of the lexical edge
-     * @return a lexical edge spanning <code>word</code>, starting at <code>start</code>
+     * to suppress default constructor.
      */
-    public static Edge lexical(String word,int start) { 
-    	Edge e = new Edge(word,start); 
+    private Edges() { }
 
-    	return e;	
-    }
     /**
-     * Create an empty edge from a rule
+     * Create a length 1 lexical edge for a word.
+     *
+     * @param word the word
+     * @param start the start position of the lexical edge
+     * @return a lexical edge spanning <code>word</code>, starting
+     * at <code>start</code>
+     */
+    public static Edge lexical(final String word, final int start) {
+        Edge e = new Edge(word, start);
+
+        return e;
+    }
+
+    /**
+     * Create an empty edge from a rule.
      *
      * @param r the rule on which the edge is based
      * @param position the position of the empty edge
-     * @return an empty edge based on <code>r</code> positioned at <code>position</code>.
+     * @return an empty edge based on <code>r</code> positioned at
+     * <code>position</code>.
      */
-    public static Edge empty(Rule r,int position) { 
-    	Edge e = new Edge(r.lhs,position,r.rhs);
+    public static Edge empty(final Rule r, final int position) {
+        Edge e = new Edge(r.getLhs(), position, r.getRhs());
 
-    	return e;
+        return e;
     }
 
     /**
-     * Create an edge via the fundamental rule
+     * Create an edge via the fundamental rule.
      *
      * @param partial the partial edge
      * @param complete the complete edge
-     * @return and edge created by the fundament rule from <code>partial</code> and <code>complete</code>.
+     * @return and edge created by the fundamental rule from
+     * <code>partial</code> and <code>complete</code>.
      */
+    public static Edge fundamental(final Edge partial, final Edge complete) {
+        Edge e = new Edge(partial, complete);
 
-    public static Edge fundamental(Edge partial,Edge complete) { 
-    	Edge e = new Edge(partial,complete);
-
-    	return e;
+        return e;
     }
-};
- 
+}
+
