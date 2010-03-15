@@ -31,7 +31,7 @@ public class Edges {
      *
      * @param word the word 
      * @param start the start position of the lexical edge
-     * @return
+     * @return a lexical edge spanning <code>word</code>, starting at <code>start</code>
      */
     public static Edge lexical(String word,int start) { 
     	Edge e = new Edge(word,start); 
@@ -41,9 +41,9 @@ public class Edges {
     /**
      * Create an empty edge from a rule
      *
-     * @param r
+     * @param r the rule on which the edge is based
      * @param position the position of the empty edge
-     * @return
+     * @return an empty edge based on <code>r</code> positioned at <code>position</code>.
      */
     public static Edge empty(Rule r,int position) { 
     	Edge e = new Edge(r.lhs,position,r.rhs);
@@ -56,7 +56,7 @@ public class Edges {
      *
      * @param partial the partial edge
      * @param complete the complete edge
-     * @return
+     * @return and edge created by the fundament rule from <code>partial</code> and <code>complete</code>.
      */
 
     public static Edge fundamental(Edge partial,Edge complete) { 

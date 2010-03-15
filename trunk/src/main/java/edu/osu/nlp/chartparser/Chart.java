@@ -331,8 +331,9 @@ public class Chart {
          * @param label
          * @param position
          */
-        public abstract void predictFromComplete(String label, int position);
 
+	public abstract void predictFromComplete(String label,int position);
+	
         /**
          * called when a partial edge is added to the chart
          *
@@ -451,5 +452,3 @@ public class Chart {
     ;
 }
 
-
-//~ Formatted by Jindent --- http://www.jindent.com
