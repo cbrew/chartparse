@@ -269,7 +269,7 @@ public class Chart {
             int i = 0;
 
             for (String word : words) {
-                agenda.add(Edges.lexical(word, i));
+                getMyChart().agenda.add(Edges.lexical(word, i));
                 i++;
             }
         }
@@ -287,7 +287,7 @@ public class Chart {
                 final int position) {
             for (Rule r : rules) {
                 if (r.getRhs().get(0).equals(label)) {
-                    agenda.add(Edges.empty(r, position));
+                    getMyChart().agenda.add(Edges.empty(r, position));
                 }
             }
         }
@@ -301,7 +301,7 @@ public class Chart {
          */
         @Override
         public final void predictFromPartial(final Edge edge) {
-            pairwithcompletes(edge, completes.get(edge.getRight()));
+            getMyChart().pairwithcompletes(edge, completes.get(edge.getRight()));
         }
     }
 
@@ -357,9 +357,9 @@ public class Chart {
             TreeSet<Edge> edges;
 
             if (e.iscomplete()) {
-                edges = (TreeSet<Edge>) completes.get(e.getLeft());
+                edges = (TreeSet<Edge>) getMyChart().completes.get(e.getLeft());
             } else {
-                edges = (TreeSet<Edge>) partials.get(e.getRight());
+                edges = (TreeSet<Edge>) getMyChart().partials.get(e.getRight());
             }
 
             if (edges.contains(e)) {
@@ -372,12 +372,12 @@ public class Chart {
                 edges.add(e);
 
                 if (e.iscomplete()) {
-                    numCompleteEdges++;
+                    getMyChart().numCompleteEdges++;
                     predictFromComplete(e.getLabel(), e.getLeft());
-                    pairwithpartials(partials.get(e.getLeft()), e);
+                    getMyChart().pairwithpartials(partials.get(e.getLeft()), e);
                 } else {
                     assert e.ispartial();
-                    numPartialEdges++;
+                    getMyChart().numPartialEdges++;
                     predictFromPartial(e);
                 }
 
@@ -419,7 +419,7 @@ public class Chart {
                 final Set<String> topCats) {
             for (Rule r : rules) {
                 if (topCats.contains(r.getLhs())) {
-                    agenda.add(Edges.empty(r, 0));
+                    getMyChart().agenda.add(Edges.empty(r, 0));
                 }
             }
         }
@@ -461,7 +461,7 @@ public class Chart {
                     && e.firstNeeded().equals(sentence[position])) {
                 Edge lex = Edges.lexical(sentence[position], position);
 
-                agenda.add(lex);
+                getMyChart().agenda.add(lex);
             }
         }
 
@@ -475,7 +475,7 @@ public class Chart {
             // input string.
             for (Rule r : rules) {
                 if (r.getLhs().equals(e.firstNeeded())) {
-                    agenda.add(Edges.empty(r, e.getRight()));
+                    getMyChart().agenda.add(Edges.empty(r, e.getRight()));
                 }
             }
         }
