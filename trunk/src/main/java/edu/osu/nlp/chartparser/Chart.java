@@ -301,7 +301,8 @@ public class Chart {
          */
         @Override
         public final void predictFromPartial(final Edge edge) {
-            getMyChart().pairwithcompletes(edge, completes.get(edge.getRight()));
+            getMyChart().pairwithcompletes(edge,
+                            completes.get(edge.getRight()));
         }
     }
 
