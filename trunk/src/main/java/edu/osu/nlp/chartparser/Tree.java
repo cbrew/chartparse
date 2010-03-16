@@ -26,7 +26,6 @@ import java.util.List;
  * The data structure for a syntax tree.
  *
  * @author Chris Brew
- * @version 0.5
  */
 public class Tree {
 

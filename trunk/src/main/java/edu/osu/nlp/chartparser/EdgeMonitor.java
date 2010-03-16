@@ -21,6 +21,7 @@ package edu.osu.nlp.chartparser;
 
 /**
  * Interface for classes that monitor the incorporation of edges.
+ * @author Chris Brew
  */
 public interface EdgeMonitor {
 

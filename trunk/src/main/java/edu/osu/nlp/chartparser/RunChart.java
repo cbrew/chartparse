@@ -19,13 +19,10 @@
 
 package edu.osu.nlp.chartparser;
 
-//~--- JDK imports ------------------------------------------------------------
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.ResourceBundle;
@@ -35,7 +32,6 @@ import java.util.Set;
  * Driver for the OSU CSE 732 chart parser.
  *
  * @author Chris Brew
- * @version 0.5
  */
 public final class RunChart {
     /**

@@ -29,10 +29,8 @@ import java.util.TreeSet;
 
 /**
  * static factory methods for making rules.
- * Assignment 2.2 requires you to supersede this with a better design
  *
  * @author Chris Brew
- * @version 0.5
  */
 public final class Rules {
 

@@ -21,7 +21,7 @@ package edu.osu.nlp.chartparser;
 
 /**
  * Fixture allowing us to see edges printed out as they are made.
- * @author cbrew
+ * @author Chris Brew
  */
 public class LoggingEdgeMonitor implements EdgeMonitor {
     /**

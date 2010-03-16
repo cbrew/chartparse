@@ -25,7 +25,6 @@ package edu.osu.nlp.chartparser;
  * of the fundamental rule.
  *
  * @author Chris Brew
- * @version 0.5
  */
 public class TraceEntry implements Comparable<TraceEntry> {
 

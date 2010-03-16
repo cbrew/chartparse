@@ -27,7 +27,6 @@ import java.util.List;
  * Data structure representing phrase structure rules.
  *
  * @author Chris Brew
- * @version 0.5
  */
 public class Rule {
 

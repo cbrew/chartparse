@@ -29,7 +29,6 @@ import java.util.Random;
  * The OSU CSE 732 generator.
  *
  * @author Chris Brew
- * @version 0.5
  */
 public class Generator {
 
