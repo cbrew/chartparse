@@ -15,8 +15,6 @@
  *  limitations under the License.
  */
 
-
-
 package edu.osu.nlp.chartparser;
 
 import java.util.ArrayList;
@@ -54,7 +52,6 @@ public class Tree {
     public Tree(final String p) {
         this(p, EMPTY);
     }
-
 
     /**
      * constructor for internal node.
@@ -182,5 +179,3 @@ public class Tree {
         return parent;
     }
 }
-
-
