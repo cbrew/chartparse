@@ -19,13 +19,28 @@ package edu.osu.nlp.chartparser;
 
 /**
  * class for laying out trees in 2-D.
+ *
+ * This is an implementation of Andrew J. Kennedy's <i>Functional Pearl</i>:
+ * "Drawing Trees", J. Functional Programming, 6(3) 527-534, May 1996
  * @author Chris Brew
  */
-public class TreeLayout {
-    public TreeLayout(final Tree tr){
-
+public final class TreeLayout {
+    /**
+     * Create a representation of the tree layout.
+     * 1) Two nodes at the same level should be at least HGAP apart.
+     * @param tr a tree to lay out
+     */
+    private TreeLayout(final Tree tr) { }
+    /**
+     * The number of pixels apart nodes at the same level should be.
+     */
+   static final int HGAP = 20;
+    /**
+     * Create a layout for a tree.
+     * @param tr the tree to lay out
+     * @return a laid out tree
+     */
+    static TreeLayout layout(final Tree tr) {
+        return new TreeLayout(tr);
     }
-
-    
-
 }
