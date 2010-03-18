@@ -98,33 +98,65 @@ public final class Extent {
         return new Extent(r);
     }
     /**
-     * Merge two extents by picking the lefts of one the rights of the other.
+     * Merge the extent with another one to its right.
      * Note that you have to be careful to handle case of
      * mismatched heights, which lead to trailing elements in one or the
      * other of the lists.
-     * @param l left extent
      * @param r right extent
      * @return the merged extent
      */
-    Extent merge(final Extent l, final Extent r) {
+    Extent merge(final Extent r) {
+        Extent l = this;
         ArrayList<ExtentPair> res = new ArrayList<ExtentPair>();
         int numShared = Math.min(l.elements.size(), r.elements.size());
 
-
-
         for (int i = 0; i < numShared; i++) {
+            // add shared layers with appropriate left and right edges
             res.add(new ExtentPair(
                         l.elements.get(i).getLeft(),
                         r.elements.get(i).getRight()));
         }
+
         // add any trailing elements from l
         res.addAll(numShared, l.elements);
         // add any trailing elements from r
+        // either this or the last call will wind
+        // up doing nothing.
         res.addAll(numShared, r.elements);
-
-
-
-
         return new Extent(res);
+    }
+
+    /**
+     * Merge a list of extents.
+     * @param extents the list of extents to merge
+     * @return the merged extent
+     */
+    Extent merge(final List<Extent> extents) {
+        Extent r = new Extent(new ArrayList<ExtentPair>());
+        for (Extent e : extents) {
+            r = r.merge(e);
+        }
+        return r;
+    }
+
+    /**
+     * Find out how close a tree may be placed to right
+     * of this one.
+     * @param r
+     * @return size of gap
+     */
+
+    double fit(Extent e){
+        double gap = 0.0;
+        List<ExtentPair> l = this.elements;
+        List<ExtentPair> r = e.elements;
+
+        int numShared = Math.min(l.size(), r.size());
+
+        for (int i = 0; i < numShared; i++) {
+            gap = Math.max(gap,l.get(i).getRight() + TreeLayout.HGAP - r.get(i).getLeft());
+        }
+
+        return gap;
     }
 }

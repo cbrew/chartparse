@@ -177,4 +177,12 @@ public class Tree {
     public final String getParent() {
         return parent;
     }
+    /**
+     * Size of a tree.
+     * @return the size (in characters) of the label
+     */
+    public final double size(){
+        return getParent().length();
+    }
+
 }

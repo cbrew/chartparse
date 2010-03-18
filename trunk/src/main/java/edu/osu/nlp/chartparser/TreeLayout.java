@@ -32,9 +32,9 @@ public final class TreeLayout {
      */
     private TreeLayout(final Tree tr) { }
     /**
-     * The number of pixels apart nodes at the same level should be.
+     * The number of layout units apart nodes at the same level should be.
      */
-   static final int HGAP = 20;
+   static final int HGAP = 1;
     /**
      * Create a layout for a tree.
      * @param tr the tree to lay out
