@@ -14,7 +14,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package edu.osu.nlp.chartparser;
 
 import java.io.BufferedReader;
@@ -38,7 +37,6 @@ public final class Rules {
      * the default INTERNAL_GRAMMAR.
      */
     public static final String[] INTERNAL_GRAMMAR = {
-
         // Like it would be in a text file
         "S (num) -> Np(num case:subj) Vp(num) | S conj S",
         "S (num) -> Np(num case:subj) cop(num) ppart",
@@ -50,7 +48,6 @@ public final class Rules {
         "Vp(num) -> cop(num) adj",
         "Vp(num) -> Vp(num) Pp", "Pp -> prep Np(case:obj)"
     };
-
     /**
      * the default INTERNAL_LEXICON.
      */
@@ -79,7 +76,7 @@ public final class Rules {
         "program n(num:sing) | v(num:pl tr:trans)",
         "programmed v( tr:trans) | ppart",
         "programs n(num:pl) | v(num:sing tr:trans)",
-         "punish v(num:pl tr:trans)", "punished v( tr:trans) | ppart",
+        "punish v(num:pl tr:trans)", "punished v( tr:trans) | ppart",
         "punishes v(num:sing tr:trans)", "ran v(tr:intrans)",
         "rat n(num:sing)", "rats n(num:pl)", "red adj",
         "reinforce v (num:pl tr:trans)",
@@ -96,17 +93,21 @@ public final class Rules {
         "undergraduates n(num:pl)",
         "universities n(num:pl)", "university n(num:sing)",
         "was cop(num:sing)", "were cop(num:pl)",
-        "william n(num:sing)",
-    };
+        "william n(num:sing)",};
 
     /**
      * just to keep track of parser.
      */
-    private enum ParseState { INITIAL, INGRAMMAR, INLEXICON }
+    private enum ParseState {
+
+        INITIAL, INGRAMMAR, INLEXICON
+    }
+
     /**
      * to prevent default construction.
      */
-    private Rules() { }
+    private Rules() {
+    }
 
     /**
      * add rules to a ruleset, first tidying them up.
@@ -114,11 +115,11 @@ public final class Rules {
      * @param rules the rules that need adding to
      */
     private static void addRules(final String s, final List<Rule> rules) {
-        StringBuilder sb       = removeBalanced(s);
-        int           arrowPos = sb.indexOf("->");
-        String        lhs      = sb.substring(0, arrowPos).trim();
-        int           start    = arrowPos + 2;
-        int           end      = 0;
+        StringBuilder sb = removeBalanced(s);
+        int arrowPos = sb.indexOf("->");
+        String lhs = sb.substring(0, arrowPos).trim();
+        int start = arrowPos + 2;
+        int end = 0;
 
         while ((end = sb.indexOf("|", start)) != -1) {
             Rule r = new Rule(lhs, sb.substring(start, end).trim());
@@ -131,17 +132,18 @@ public final class Rules {
 
         rules.add(r);
     }
+
     /**
      * Tidy up a lexical entry before placing it in the ruleset.
      * @param s the string representing the rule
      * @param rules the list of rules we are appending to.
      */
     private static void addEntry(final String s, final List<Rule> rules) {
-        StringBuilder sb       = removeBalanced(s);
-        int           spacePos = sb.indexOf(" ");
-        String        word     = sb.substring(0, spacePos).trim();
-        int           start    = spacePos + 1;
-        int           end      = 0;
+        StringBuilder sb = removeBalanced(s);
+        int spacePos = sb.indexOf(" ");
+        String word = sb.substring(0, spacePos).trim();
+        int start = spacePos + 1;
+        int end = 0;
 
         while ((end = sb.indexOf("|", start)) != -1) {
             Rule r = new Rule(sb.substring(start, end).trim(), word);
@@ -154,6 +156,7 @@ public final class Rules {
 
         rules.add(r);
     }
+
     /**
      * Ignore the feature part of the strings.
      * @param s the string with optional feature descriptions in round
@@ -163,8 +166,8 @@ public final class Rules {
     private static StringBuilder removeBalanced(final String s) {
 
         // erase features (because we don't handle them)
-        StringBuilder sb    = new StringBuilder(s);
-        int           start = 0;
+        StringBuilder sb = new StringBuilder(s);
+        int start = 0;
 
         while ((start = sb.indexOf("(")) != -1) {
             sb.delete(start, sb.indexOf(")", start) + 1);
@@ -172,7 +175,6 @@ public final class Rules {
 
         return sb;
     }
-
 
     /**
      * read a grammar from a text file.
@@ -184,31 +186,43 @@ public final class Rules {
         try {
             BufferedReader gramin = new BufferedReader(
                     new FileReader(filename));
-            String         line;
-            ParseState     ps    = ParseState.INITIAL;
-            List<Rule>     rules = new ArrayList<Rule>();
-
-            while ((line = gramin.readLine()) != null) {
-                if (line.equals("grammar")) {
-                    ps = ParseState.INGRAMMAR;
-                } else if (line.equals("thatsall")) {
-                    ps = ParseState.INITIAL;
-                } else if (line.equals("lexicon")) {
-                    ps = ParseState.INLEXICON;
-                } else if (ps == ParseState.INLEXICON) {
-                    addEntry(line, rules);
-                } else if (ps == ParseState.INGRAMMAR) {
-                    addRules(line, rules);
-                }
-            }
-
-            gramin.close();
-
-            return rules;
+            return grammar(gramin);
         } catch (IOException e) {
             return null;
         }
     }
+
+    /**
+     * constructor for the grammar from Reader
+     * @param gramin BufferedReader for the grammar
+     * @return list of rules
+     * @throws IOException
+     */
+    public static List<Rule> grammar(final BufferedReader gramin)
+            throws IOException {
+        String line;
+        ParseState ps = ParseState.INITIAL;
+        List<Rule> rules = new ArrayList<Rule>();
+
+        while ((line = gramin.readLine()) != null) {
+            if (line.equals("grammar")) {
+                ps = ParseState.INGRAMMAR;
+            } else if (line.equals("thatsall")) {
+                ps = ParseState.INITIAL;
+            } else if (line.equals("lexicon")) {
+                ps = ParseState.INLEXICON;
+            } else if (ps == ParseState.INLEXICON) {
+                addEntry(line, rules);
+            } else if (ps == ParseState.INGRAMMAR) {
+                addRules(line, rules);
+            }
+        }
+
+        gramin.close();
+
+        return rules;
+    }
+
     /**
      * Get the left hand sides of a rule set as a set of strings.
      * @param rs the rules to get the lhses of
@@ -223,14 +237,15 @@ public final class Rules {
 
         return xs;
     }
+
     /**
      * Make a ruleset in form of a map.
      * @param rs the input ruleset
      * @return a map from lhses to lists of rules with that lhs
      */
     private static Map<String, List<Rule>> rulesByLhs(final List<Rule> rs) {
-        Set<String>                 lhss = leftHandSides(rs);
-        TreeMap<String, List<Rule>> tm   = new TreeMap<String, List<Rule>>();
+        Set<String> lhss = leftHandSides(rs);
+        TreeMap<String, List<Rule>> tm = new TreeMap<String, List<Rule>>();
 
         for (String lhs : lhss) {
             tm.put(lhs, new ArrayList<Rule>());

@@ -50,6 +50,15 @@ public class Rule {
     }
 
     /**
+     * The obvious definition of equality for rules.
+     * @param other the thing to compare against
+     * @return true iff lhses equal and rhses equal
+     */
+    public final boolean equals(final Rule other) {
+        return lhs.equals(other.lhs) && rhs.equals(other.rhs);
+    }
+
+    /**
      * @return the lhs
      */
     public final String getLhs() {
