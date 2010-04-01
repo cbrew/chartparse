@@ -34,7 +34,8 @@
       <license>
           <name>Apache license 2.0</name>
           <distribution>repo</distribution>
-          <url>http://www.opensource.org/licenses/apache2.0.php</url>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt
+          </url>
       </license>
   </licenses>
 	<issueManagement>
@@ -61,6 +62,50 @@
     </developers>
     <build>
         <plugins>
+            
+<plugin>
+            <groupId>com.mycila.maven-license-plugin</groupId>
+            <artifactId>maven-license-plugin</artifactId>
+            <configuration>
+                <basedir>${basedir}</basedir>
+                <header>${basedir}/src/etc/header.txt</header>
+                <quiet>false</quiet>
+                <failIfMissing>true</failIfMissing>
+                <aggregate>false</aggregate>
+                <includes>
+                    <include>src/**</include>
+                    <include>**/test/**</include>
+                </includes>
+                <excludes>
+                    <exclude>target/**</exclude>
+                    <exclude>.clover/**</exclude>
+                </excludes>
+                <useDefaultExcludes>true</useDefaultExcludes>
+                <mapping>
+                    <jwc>XML_STYLE</jwc>
+                    <application>XML_STYLE</application>
+                    <myFileExtension>JAVADOC_STYLE</myFileExtension>
+                </mapping>
+                <useDefaultMapping>true</useDefaultMapping>
+                <properties>
+                    <year>${project.inceptionYear}</year>
+                    <email>cbrew@acm.org</email>
+                </properties>
+                <encoding>UTF-8</encoding>
+                <!-- <headerDefinitions>
+                    <headerDefinition>def1.xml</headerDefinition>
+                    <headerDefinition>def2.xml</headerDefinition>
+                </headerDefinitions>
+                -->
+            </configuration>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>check</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
