@@ -70,7 +70,7 @@
                 <basedir>${basedir}</basedir>
                 <header>${basedir}/src/main/resources/header.txt</header>
                 <quiet>false</quiet>
-                <failIfMissing>true</failIfMissing>
+                <failIfMissing>false</failIfMissing>
                 <aggregate>false</aggregate>
                 <includes>
                     <include>src/**</include>
@@ -98,13 +98,6 @@
                 </headerDefinitions>
                 -->
             </configuration>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>check</goal>
-                    </goals>
-                </execution>
-            </executions>
         </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
