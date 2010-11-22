@@ -74,7 +74,7 @@ public abstract class Strategy {
     public final boolean incorporate(final Edge e) {
         TreeSet<Edge> edges;
         if (e.iscomplete()) {
-            edges = (TreeSet<Edge>) myChart.completes.get(e.getLeft());
+            edges = (TreeSet<Edge>) myChart.getCompletes().get(e.getLeft());
         } else {
             edges = (TreeSet<Edge>) myChart.partials.get(e.getRight());
         }
@@ -85,12 +85,12 @@ public abstract class Strategy {
         } else {
             edges.add(e);
             if (e.iscomplete()) {
-                myChart.numCompleteEdges++;
+                myChart.incrementCompletes();
                 predictFromComplete(e.getLabel(), e.getLeft());
                 myChart.pairwithpartials(myChart.partials.get(e.getLeft()), e);
             } else {
                 assert e.ispartial();
-                myChart.numPartialEdges++;
+                myChart.incrementPartials();
                 predictFromPartial(e);
             }
             return true;

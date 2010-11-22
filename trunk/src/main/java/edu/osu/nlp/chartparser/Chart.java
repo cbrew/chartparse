@@ -53,7 +53,7 @@ public class Chart {
     /**
      * tracks statistics for complete edges.
      */
-    public int numCompleteEdges = 0;
+    private int numCompleteEdges = 0;
 
     /**
      * accessor for number of complete edges.
@@ -65,7 +65,7 @@ public class Chart {
     /**
      * tracks statistics for partial edges.
      */
-    public int numPartialEdges = 0;
+    private int numPartialEdges = 0;
 
     /**
      * accessor for number of partial edges.
@@ -90,15 +90,15 @@ public class Chart {
     /**
      * the length of the input string.
      */
-    public final int numWords;
+    private final int numWords;
     /**
      * store for agenda.
      */
-    public final Queue<Edge> agenda;
+    private final Queue<Edge> agenda;
     /**
      * store for complete edges.
      */
-    public final ArrayList<Set<Edge>> completes;
+    private final ArrayList<Set<Edge>> completes;
     /**
      * store for partial edges.
      */
@@ -204,7 +204,8 @@ public class Chart {
      * @param complete the complete edge to pair
      * @param ps the collection of complete edges that might match
      */
-    public void pairwithpartials(final Set<Edge> ps, final Edge complete) {
+    public final void pairwithpartials(final Set<Edge> ps, final Edge complete)
+    {
         for (Edge partial : ps) {
             if (partial.firstNeeded().equals(complete.getLabel())) {
                 agenda.add(Edges.fundamental(partial, complete));
@@ -219,7 +220,8 @@ public class Chart {
      * @param partial the partial edge to pair
      * @param cs the collection of complete edges thar might match
      */
-    public void pairwithcompletes(final Edge partial, final Set<Edge> cs) {
+     public final void pairwithcompletes(final Edge partial, final Set<Edge> cs)
+    {
         for (Edge complete : cs) {
             if (partial.firstNeeded().equals(complete.getLabel())) {
                 agenda.add(Edges.fundamental(partial, complete));
@@ -242,6 +244,34 @@ public class Chart {
                 System.out.println(t.asString());
             }
         }
+    }
+
+    /**
+     * accessor for agenda.
+     * @return the agenda
+     */
+    public final Queue<Edge> getAgenda() {
+        return agenda;
+    }
+
+    /**
+     * accessor for completes.
+     * @return the completes
+     */
+    List<Set<Edge>> getCompletes() {
+        return completes;
+    }
+
+    void incrementCompletes() {
+        numCompleteEdges++;
+    }
+
+    void incrementPartials(){
+        numPartialEdges++;
+    }
+
+    final int getNumWords() {
+        return numWords;
     }
 }
 

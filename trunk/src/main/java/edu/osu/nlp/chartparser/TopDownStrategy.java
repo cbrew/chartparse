@@ -32,7 +32,7 @@ public class TopDownStrategy extends Strategy {
     public final void initialize(final String[] words, final Set<String> topCats) {
         for (Rule r : getMyChart().rules) {
             if (topCats.contains(r.getLhs())) {
-                getMyChart().agenda.add(Edges.empty(r, 0));
+                getMyChart().getAgenda().add(Edges.empty(r, 0));
             }
         }
     }
@@ -67,9 +67,9 @@ public class TopDownStrategy extends Strategy {
      */
     private void scan(final Edge e) {
         int position = e.getLeft();
-        if (( position < getMyChart().numWords ) && e.firstNeeded().equals(getMyChart().sentence[position])) {
+        if (( position < getMyChart().getNumWords() ) && e.firstNeeded().equals(getMyChart().sentence[position])) {
             Edge lex = Edges.lexical(getMyChart().sentence[position], position);
-            getMyChart().agenda.add(lex);
+            getMyChart().getAgenda().add(lex);
         }
     }
 
@@ -82,7 +82,7 @@ public class TopDownStrategy extends Strategy {
         // input string.
         for (Rule r : getMyChart().rules) {
             if (r.getLhs().equals(e.firstNeeded())) {
-                getMyChart().agenda.add(Edges.empty(r, e.getRight()));
+                getMyChart().getAgenda().add(Edges.empty(r, e.getRight()));
             }
         }
     }

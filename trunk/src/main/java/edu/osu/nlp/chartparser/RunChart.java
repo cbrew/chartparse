@@ -79,14 +79,15 @@ public final class RunChart {
      * @throws IOException If an input or output exception occurred.
      */
     public static void main(final String[] args) throws IOException {
-        String sentenceFile = "sentences.txt";
+         ResourceBundle bundle = ResourceBundle.getBundle("Chart");
+        String sentenceFile = bundle.getString("parser.sentences");
         String line;
 
         treesOut = System.out;
 
         BufferedReader in     = new BufferedReader(
                 new FileReader(sentenceFile));
-        ResourceBundle bundle = ResourceBundle.getBundle("Chart");
+       
 
         printTrees = bundle.getString("parser.printTrees").equals("true");
 

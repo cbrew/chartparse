@@ -37,7 +37,7 @@ public class BottomUpStrategy extends Strategy {
     public final void initialize(final String[] words, final Set<String> topCats) {
         int i = 0;
         for (String word : words) {
-            getMyChart().agenda.add(Edges.lexical(word, i));
+            getMyChart().getAgenda().add(Edges.lexical(word, i));
             i++;
         }
     }
@@ -53,7 +53,7 @@ public class BottomUpStrategy extends Strategy {
     public final void predictFromComplete(final String label, final int position) {
         for (Rule r : getMyChart().rules) {
             if (r.getRhs().get(0).equals(label)) {
-                getMyChart().agenda.add(Edges.empty(r, position));
+                getMyChart().getAgenda().add(Edges.empty(r, position));
             }
         }
     }
@@ -68,7 +68,7 @@ public class BottomUpStrategy extends Strategy {
     @Override
     public final void predictFromPartial(final Edge edge) {
         int right = edge.getRight();
-        Set<Edge> cs = getMyChart().completes.get(right);
+        Set<Edge> cs = getMyChart().getCompletes().get(right);
         getMyChart().pairwithcompletes(edge, cs);
     }
 }
