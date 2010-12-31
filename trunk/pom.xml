@@ -62,7 +62,10 @@
     </developers>
     <build>
         <plugins>
-            
+        	<plugin>
+			  <groupId>org.mortbay.jetty</groupId>
+			  <artifactId>jetty-maven-plugin</artifactId>
+			</plugin>    
 <plugin>
             <groupId>com.mycila.maven-license-plugin</groupId>
             <artifactId>maven-license-plugin</artifactId>
