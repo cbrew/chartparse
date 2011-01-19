@@ -23,7 +23,11 @@ import java.util.Set;
  */
 public class BottomUpStrategy extends Strategy {
 
-
+    /**
+     * A strategy that builds up edges from below, without regard to whether
+     * they will lead to anything.
+     * @param ch the chart that strategy needs to see.
+     */
     BottomUpStrategy(final Chart ch) {
         super(ch);
     }
@@ -34,7 +38,8 @@ public class BottomUpStrategy extends Strategy {
      * @param topCats the allowable root categories.
      */
     @Override
-    public final void initialize(final String[] words, final Set<String> topCats) {
+    public final void initialize(final String[] words,
+             final Set<String> topCats) {
         int i = 0;
         for (String word : words) {
             getMyChart().getAgenda().add(Edges.lexical(word, i));
@@ -50,7 +55,8 @@ public class BottomUpStrategy extends Strategy {
      *  should be made.
      */
     @Override
-    public final void predictFromComplete(final String label, final int position) {
+    public final void predictFromComplete(final String label,
+            final int position) {
         for (Rule r : getMyChart().rules) {
             if (r.getRhs().get(0).equals(label)) {
                 getMyChart().getAgenda().add(Edges.empty(r, position));

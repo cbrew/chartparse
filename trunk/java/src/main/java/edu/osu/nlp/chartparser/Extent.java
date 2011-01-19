@@ -141,11 +141,11 @@ public final class Extent {
     /**
      * Find out how close a tree may be placed to right
      * of this one.
-     * @param r
+     * @param e the extent that is needed.
      * @return size of gap
      */
 
-    double fit(Extent e){
+    double fit(final Extent e) {
         double gap = 0.0;
         List<ExtentPair> l = this.elements;
         List<ExtentPair> r = e.elements;
@@ -153,7 +153,8 @@ public final class Extent {
         int numShared = Math.min(l.size(), r.size());
 
         for (int i = 0; i < numShared; i++) {
-            gap = Math.max(gap,l.get(i).getRight() + TreeLayout.HGAP - r.get(i).getLeft());
+            gap = Math.max(gap, l.get(i).getRight()
+                    + TreeLayout.HGAP - r.get(i).getLeft());
         }
 
         return gap;
