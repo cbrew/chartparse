@@ -35,12 +35,13 @@ S
 """
 
 from english import GRAMMAR
-from collections import defaultdict,deque
+from collections import defaultdict, deque
 import doctest
 
 
 
 class Edge(object):
+    __slots__ = ('label','left','right','needed')
     """
     An edge is an assertion about some span of the text. It has a left and right boundary, 
     a label, and a sequence of needs. If it has no needs, it is said to be B{COMPLETE}, otherwise
@@ -54,6 +55,9 @@ class Edge(object):
     @ivar right: the index of the right boundary of the edge.
     @type needed: tuple of strings
     @ivar needed: strings representing the categories that the edge needs.
+
+
+    >>> x = Edge('s',0,1,())
     """
 
     def __init__(self,label,left,right,needed):
@@ -76,11 +80,26 @@ class Edge(object):
     def iscomplete(self):
         """
         Test if the edge is complete
+
+        >>> x = Edge('dog',0,1,())
+        >>> x.iscomplete()
+        True
+        >>> x = Edge('s',0,1,('np','vp'))
+        >>> x.iscomplete()
+        False
         """
         return not self.needed 
     def ispartial(self):
         """
         Test if the edge is partial
+
+        >>> x = Edge('dog',0,1,())
+        >>> x.ispartial()
+        ()
+        >>> x = Edge('s',0,1,('np','vp'))
+        >>> x.ispartial()
+        ('np', 'vp')
+
         """
         return self.needed
     __slots__ = ["label","left","right","needed"]    
@@ -171,9 +190,12 @@ class Chart(object):
         @Param e: an edge that has just been made
         @Type c: Edge
         @Param c: the predecessor of e
+        @Rtype: <Edge>
+        @Return: the edge whose information has just been recorded. 
         """
         self.prev[e].add(c)
         return e
+
     def get_prev(self,e):
         """
         Return the predcessors of an edge
@@ -318,6 +340,26 @@ def parse(sentence):
   
     @Type sentence: list<string>
     @Param sentence: the words to be parsed
+
+
+    >>> parse(["the","pigeons",'are','punished','and','they','suffer'])
+    ['the', 'pigeons', 'are', 'punished', 'and', 'they', 'suffer']
+    Parse 1:
+    S
+     S
+      Np
+       det the
+       Nn
+        n pigeons
+      cop are
+      ppart punished
+     conj and
+     S
+      Np
+       pn they
+      Vp
+       v suffer
+    1 parses
     """
     v = Chart(sentence)
     print sentence
