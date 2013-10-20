@@ -8,7 +8,7 @@ comes with the wonderful Poplog AI development environment
 @Author: Chris Brew
 @Date: April 2009
 @Copyright: Chris Brew, 2009
-@License: GNU GPL v3
+@License: Apache License 2.0
 @Contact: christopher.brew@gmail.com
 
 
