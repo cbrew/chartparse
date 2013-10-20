@@ -5,7 +5,7 @@ english.py -- grammar for agenda-based chart parser in Python
 @Author: Chris Brew
 @Date: April 2009
 @Copyright: Stephen Isard, 1983, Chris Brew, 2009
-@License: GNU GPL v3
+@License: Apache License 2.0
 @Contact: christopher.brew@gmail.com
 @Summary: Grammar for Steve Isard's B{LIB CHART}, a 1983 vintage teaching tool that
 comes with the Poplog AI development environment. 
