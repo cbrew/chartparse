@@ -388,7 +388,7 @@ public class Edge implements Comparable<Edge> {
         private final Edge edge;
 
         /**
-         * create an iterable over treesfrom an edge.
+         * create an iterable over trees from an edge.
          * @param e the edge
          */
         public AllTreesIterable(final Edge e) {
