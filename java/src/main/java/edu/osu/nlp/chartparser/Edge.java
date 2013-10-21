@@ -260,7 +260,7 @@ public class Edge implements Comparable<Edge> {
 
     /**
      * Generate all trees from the current edge.
-     *
+     * Assignment 2.4
      * @return Iterable suitable for use with Java's new style for loop
      */
     public final Iterable<Tree> allTrees() {
@@ -361,7 +361,7 @@ public class Edge implements Comparable<Edge> {
     }
 
     /**
-     * @return humsn readable string representation of edge
+     * @return human readable string representation of edge
      */
     public final String asString() {
         if (iscomplete()) {

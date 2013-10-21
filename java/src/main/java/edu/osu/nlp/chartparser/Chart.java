@@ -197,6 +197,8 @@ public class Chart {
         return dest;
     }
 
+
+
     /**
      * Pair a complete with the partials that abut it.
      * Push the results onto the agenda

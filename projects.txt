@@ -21,12 +21,12 @@ bottom-up implementation that I provide. Here performance is measured in the fol
 Optional (hard) bonus problems
 
 2.4) Implement and test the allParses method in Chart.java. For full credit the method should be able
-to enumerate the first few parses in polynomial time even if there are ridiculously many parses in total
- [up to 50 bonus points]
+to enumerate the first few parses in polynomial time even if there are ridiculously many parses in total.
+  [solution in Edge.java, satisfies polynomial requirement by simple expedient of first counting then indexing.]
 
 2.5) Devise a strategy for the chart parser that produces the same edges as Earley's algorithm [25 bonus points]
 
-2.6) Implement and test the countParses method in Chart.java [10 bonus points, and a good warmup for 2.4]
+2.6) Implement and test the countParses method. [solution in Edge.java]
 
 Project ideas
 ========
