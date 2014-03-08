@@ -7,23 +7,28 @@ english.py -- grammar for agenda-based chart parser in Python
 @Copyright: Stephen Isard, 1983, Chris Brew, 2009
 @License: Apache License 2.0
 @Contact: christopher.brew@gmail.com
-@Summary: Grammar for Steve Isard's B{LIB CHART}, a 1983 vintage teaching tool that
-comes with the Poplog AI development environment. 
+@Summary: Grammar for Steve Isard's B{LIB CHART}, a 1983
+vintage teaching tool that comes with the Poplog AI development environment.
 
-The grammar is almost entirely Steve's. I modified the production NP -> det Nn PP to read NP -> NP PP 
-because I wanted the usual Catalan number behaviour with multiple modification. In addition, I added
-some words and names. As in the original LIB CHART, features on the categories are (um!) inoperative.
-
+The grammar is almost entirely Steve's. I modified the production
+NP -> det Nn PP to read NP -> NP PP because I wanted
+Catalan number behaviour with multiple modification.
+In addition, I added some words and names. As in the
+original LIB CHART, features on the categories
+ are (um!) inoperative.
 """
 
+
 class Grammar(object):
+
     """
     Class for creating grammars from text strings
     """
-    def __init__(self,grammar,lexicon):
+
+    def __init__(self, grammar, lexicon):
         self.grammar = self.__rulify(grammar) + self.__lexicalize(lexicon)
 
-    def __remove_balanced_brackets(self,string):
+    def __remove_balanced_brackets(self, string):
         r = []
         collecting = True
         for ch in string:
@@ -34,17 +39,19 @@ class Grammar(object):
             elif collecting:
                 r.append(ch)
         return "".join(r)
-    def __rulify(self,s):
+
+    def __rulify(self, s):
         r = []
         s = self.__remove_balanced_brackets(s)
         lines = s.split('\n')
         for line in lines:
-            lhs,rhs = line.split('->')
+            lhs, rhs = line.split('->')
             lhs = lhs.split()[0]
             elems = rhs.split('|')
-            r += [(lhs,elem.split()) for elem in elems]
+            r += [(lhs, elem.split()) for elem in elems]
         return r
-    def __lexicalize(self,string):
+
+    def __lexicalize(self, string):
         string = self.__remove_balanced_brackets(string)
         lines = string.split("\n")
         rules = []
@@ -55,12 +62,11 @@ class Grammar(object):
             elems = r.split('|')
             for elem in elems:
                 a = elem.split()
-                rules.append((a[0],[w]))
+                rules.append((a[0], [w]))
         return rules
 
 
-
-RULES= """S (num) -> Np(num case:subj) Vp(num) | S conj S
+RULES = """S (num) -> Np(num case:subj) Vp(num) | S conj S
 S (num) -> Np(num case:subj) cop(num) ppart
 S(num) -> Np(num case:subj) cop(num) ppart passmarker Np(case:obj)
 Np (num case) -> det(num) Nn(num) | Np Pp | pn(num case)
@@ -70,7 +76,7 @@ Vp(num)  -> v(num tr:trans) Np(case:obj) | v(num tr:intrans) | cop(num) adj
 Vp(num) -> Vp(num) Pp
 Pp -> prep Np(case:obj)"""
 
-WORDS ="""det a(num:sing)
+WORDS = """det a(num:sing)
 and conj
 are cop(num:pl)
 ball n (num : sing)
@@ -150,9 +156,4 @@ was cop(num:sing)
 were cop(num:pl)"""
 
 
-GRAMMAR = Grammar(RULES,WORDS).grammar
-
-
-
-
-
+GRAMMAR = Grammar(RULES, WORDS).grammar
