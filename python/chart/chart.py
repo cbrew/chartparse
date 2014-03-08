@@ -37,7 +37,7 @@ S
 
 from english import GRAMMAR
 from collections import defaultdict, deque
-import doctest
+
 
 
 class Edge(object):
@@ -270,7 +270,9 @@ gave rise to them: empty for edges not created by fundamental rule
         @Type i: integer
         @Param i: the index of the cell where the empty edges are to go.
         """
-        for (lhs, rhs) in GRAMMAR:
+        for rule in GRAMMAR:
+            lhs = rule.lhs
+            rhs = rule.rhs
             if rhs[0] == lc:
                 self.agenda.append(Edge(lhs, i, i, tuple(rhs)))
 
@@ -400,5 +402,4 @@ def parse(sentence):
             print treestring(tree),
     print i, "parses"
 
-if __name__ == "__main__":
-    doctest.testmod()
+

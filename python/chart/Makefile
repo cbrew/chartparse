@@ -3,4 +3,4 @@ doc:
 clean:
 	rm -rf *.pyc html
 test:
-	python chart.py
+	nosetests -v --with-doctest
