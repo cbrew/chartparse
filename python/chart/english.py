@@ -1,19 +1,24 @@
-"""
-english.py -- grammar for agenda-based chart parser in Python
+"""A grammar for chartparse,
 
-@Author: Steve Isard
-@Author: Chris Brew
-@Date: April 2009
-@Copyright: Stephen Isard, 1983, Chris Brew, 2009, 2014
-@License: Apache License 2.0
-@Contact: christopher.brew@gmail.com
-@Summary: Grammar for Steve Isard's B{LIB CHART}, a
-teaching tool that comes with the Poplog AI development environment.
+.. moduleauthor: Steve Isard
+.. moduleauthor: Chris Brew
 
-The grammar is almost entirely Steve's. I modified the production
-NP -> det Nn PP to read NP -> NP PP because I wanted
-Catalan number behaviour with multiple modification.
-In addition, I added some words and names. As in the
+This grammar was originally written by Steve Isard at the
+University of Sussex. The vocabulary is designed to amuse
+undergraduate Experimental Psychology students, hence the
+references to pigeons and cages.
+
+The grammar is almost entirely Steve's. Chris Brew modified the 
+production
+
+    NP -> det Nn PP 
+
+to read 
+
+    NP -> NP PP 
+
+because he wantedCatalan number behaviour with multiple modification.
+In addition, he added some words and names. As in the
 original LIB CHART, features on the categories
 are (um!) inoperative.
 """
@@ -22,30 +27,53 @@ from collections import namedtuple, defaultdict
 import numpy.random as npr
 import numpy as np
 
-Rule = namedtuple("Rule",("lhs","rhs","probability"))
+class Rule(namedtuple("Rule", ("lhs", "rhs", "probability"))):
+    """One production of a context-free grammar.
+
+    .. attribute:: lhs
+
+       The left hand side of the rule.
+
+    .. attribute:: rhs
+
+        The right hand side of the rule.
+
+    .. attribute:: probability
     
+        The probability `P(rhs|lhs)`.
+
+"""
 
 class Grammar(object):
 
     """
-    Class for creating grammars from text strings.    
+    Class for creating grammars from text strings.
+
     >>> g = Grammar(RULES, WORDS)
     >>> g.grammar[0]
     Rule(lhs='S', rhs=['Np', 'Vp'], probability=0.39005498145500445)
     """
 
     def __init__(self, grammar, lexicon):
+        """
+        Create a grammar from strings.
+
+        :type grammar: string
+        :param grammar: the grammar rules, in the form lhs -> rhs (|rhs)*
+        :type lexicon:  string
+        :param lexicon: the words, in the form word category+ 
+        """
         self.grammar = self.__rulify(grammar) + self.__lexicalize(lexicon)
-        self.probabilize()
-    
-    def probabilize(self):
+        self._probabilize()
+
+    def _probabilize(self):
         """
         Rules all take the form lhs -> rhs.
         Add some probabilities.
 
         The grammar was hand-written, we therefore
         have no reason to choose any particular
-        probabilities. Might as well assign them at 
+        probabilities. Might as well assign them at
         random, being careful to normalize at the
         end.
 
@@ -57,13 +85,16 @@ class Grammar(object):
         self.test_state = state.rand()
         self.grammar = [Rule(lhs=r.lhs,
                              rhs=r.rhs,
-                             probability=state.rand()) 
+                             probability=state.rand())
                         for r in self.grammar
                         ]
-        self.normalize()
+        self._normalize()
 
-    def normalize(self):
+    def _normalize(self):
         """
+        Ensure that each P(rhs|lhs) is
+        a normalized probability 
+        distribution.
 
         >>> g = Grammar(RULES, WORDS)
         >>> g.normalized()
@@ -74,7 +105,7 @@ class Grammar(object):
             totals_for_lhs[r.lhs] += r.probability
         self.grammar = [Rule(lhs=r.lhs,
                              rhs=r.rhs,
-                             probability=r.probability/totals_for_lhs[r.lhs]) 
+                             probability=r.probability / totals_for_lhs[r.lhs])
                         for r in self.grammar]
 
     def normalized(self):
@@ -82,7 +113,7 @@ class Grammar(object):
         for r in self.grammar:
             totals_for_lhs[r.lhs] += r.probability
         totals = np.array(totals_for_lhs.values())
-        return np.allclose(totals,1.0)
+        return np.allclose(totals, 1.0)
 
     def __remove_balanced_brackets(self, string):
         r = []
@@ -104,7 +135,8 @@ class Grammar(object):
             lhs, rhs = line.split('->')
             lhs = lhs.split()[0]
             elems = rhs.split('|')
-            r += [Rule(lhs=lhs, rhs=elem.split(),probability=None) for elem in elems]
+            r += [Rule(lhs=lhs, rhs=elem.split(), probability=None)
+                  for elem in elems]
         return r
 
     def __lexicalize(self, string):

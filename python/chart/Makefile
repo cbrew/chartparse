@@ -1,5 +1,5 @@
-doc:
-	epydoc *.py
+doc: 
+	(cd docs; make html)
 clean:
 	rm -rf *.pyc html
 test:

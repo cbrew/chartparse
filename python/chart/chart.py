@@ -35,50 +35,92 @@ S
 
 """
 
-from english import GRAMMAR
+from english import GRAMMAR, Grammar
 from collections import defaultdict, deque
 
+def _pmul(p1,p2):
+    if p1 and p2:
+        return p1*p2
+    else:
+        return None
 
 
 class Edge(object):
-    __slots__ = ('label', 'left', 'right', 'needed', 'probability')
+    __slots__ = ('label', 'left', 'right', 'needed')
+
     """
     An edge is an assertion about some span of the text. It has a left and
     right boundary, a label, and a sequence of needs. If it has no needs,
     it is said to be B{COMPLETE}, otherwise it is described as B{PARTIAL}
 
-    @type label: string
-    @ivar label: the mother node of the constituent.
-    @type left: integer(0..n)
-    @ivar left: the index of the left boundary of the edge.
-    @type right: integer(0..n)
-    @ivar right: the index of the right boundary of the edge.
-    @type needed: tuple of strings
-    @ivar needed: strings representing the categories that the edge needs.
-    @type probability: float
-    @ivar probability: the inside probability of the edge.
+    :type label: string
+    :ivar label: the mother node of the constituent.
+    :type left: integer(0..n)
+    :ivar left: the index of the left boundary of the edge.
+    :type right: integer(0..n)
+    :ivar right: the index of the right boundary of the edge.
+    :type needed: tuple of strings
+    :ivar needed: strings representing the categories that the edge needs.
+    :type _p: float
+    :ivar _p: the inside probability of the edge.
 
     >>> x = Edge('s',0,1,(), 0.5)
+
+    
     """
+
+    
+    _p = defaultdict(float)
+    """
+    Caution! this is tricky. Edges are associated with probabilities
+    via this global dictionary.
+
+    The reason for this is that we want to add probabilities of different
+    ways of making the same edge. But it is really hard to get right, because
+    when a child edge is updated, this invalidates the previous calculations
+    for all higher edges that depend on it. We are definitely not doing this
+    right yet.
+
+    """
+
+    @staticmethod
+    def clear():
+        """
+        reset the probability table.
+        """
+        Edge._p = defaultdict(float)
+
 
     def __init__(self, label, left, right, needed, probability=None):
         """
         Constructs an edge.
 
-        @type label: string
-        @param label: the mother node of the constituent..
-        @type left: integer(0..n)
-        @param left: the index of the left boundary of the edge.
-        @type right: integer(0..n)
-        @param right: the index of the right boundary of the edge.
-        @type needed: tuple of strings
-        @param needed: strings representing the categories that the edge needs.
+        :type label: string
+        :param label: the mother node of the constituent.
+        :type left: integer(0..n)
+        :param left: the index of the left boundary of the edge.
+        :type right: integer(0..n)
+        :param right: the index of the right boundary of the edge.
+        :type needed: tuple of strings
+        :param needed: strings representing the categories that the edge needs.
         """
         self.label = label
         self.left = left
         self.right = right
         self.needed = needed
         self.probability = probability
+
+
+    @property
+    def probability(self):
+        return Edge._p[self]
+
+    @probability.setter
+    def probability(self, value):
+        if value is None:
+            Edge._p[self] = None
+        else:
+            Edge._p[self] += value
 
     def iscomplete(self):
         """
@@ -115,12 +157,15 @@ class Edge(object):
         @See: U{http://docs.python.org/\
 reference/datamodel.html#object.__repr__}
         """
-        return "Edge(%r,%d,%d,%r)" % (
-            self.label,
-            self.left,
-            self.right,
-            self.needed
-        )
+
+        return ("Edge({label},{left},{right},{needed})@{probability:.4e}"
+                if self.probability
+                else "Edge({label},{left},{right},{needed})").format(\
+            label=self.label,
+            left=self.left,
+            right=self.right,
+            needed=self.needed,
+            probability=self.probability)
 
     def __eq__(self, other):
         """
@@ -167,6 +212,7 @@ gave rise to them: empty for edges not created by fundamental rule
         @Type words: list of string.
         @Param words: the words to be parsed.
         """
+        Edge.clear()
         self.partials = [set() for _ in range(len(words) + 1)]
         self.completes = [set() for _ in range(len(words) + 1)]
         self.prev = defaultdict(set)
@@ -185,7 +231,7 @@ gave rise to them: empty for edges not created by fundamental rule
         @Type i: integer
         @Param i: where the edge starts
         """
-        return Edge(word, i, i + 1, ())
+        return Edge(word, i, i + 1, (),probability=1.0)
 
     def solutions(self, topCat):
         """
@@ -232,6 +278,8 @@ gave rise to them: empty for edges not created by fundamental rule
 
         Updates the C{agenda} by adding to its end.
 
+        Probabilities, if present, are propagated.
+
         @Type partials: set<Edge>
         @Param partials: the potential partners of e
         @Type e: Edge
@@ -239,9 +287,11 @@ gave rise to them: empty for edges not created by fundamental rule
         """
         for p in partials:
             if e.label == p.needed[0]:
+                probability = _pmul(e.probability,p.probability)
                 self.agenda.append(
                     self.add_prev(Edge(p.label, p.left, e.right,
-                                       p.needed[1:]), e))
+                                       p.needed[1:],
+                                       probability=probability),e))
 
     def pairwithcompletes(self, e, completes):
         """
@@ -250,31 +300,40 @@ gave rise to them: empty for edges not created by fundamental rule
 
         Updates the C{agenda} by adding to its end.
 
-        @Type completes: set<Edge>
-        @Param completes: the potential partners of e
-        @Type e: Edge
-        @Param e: The partial edge that should be completed
+        :type completes: set<Edge>
+        :param completes: the potential partners of e
+        :type e: Edge
+        :param e: The partial edge that should be completed
         """
         for c in completes:
             if e.needed[0] == c.label:
+                probability = _pmul(e.probability,c.probability)
                 self.agenda.append(
                     self.add_prev(Edge(e.label, e.left,
-                                       c.right, e.needed[1:]), c))
+                                       c.right, e.needed[1:],probability=probability), c))
 
     def spawn(self, lc, i):
         """
         Spawn empty edges from the rules that match C{lc}.
 
-        @Type lc: string
-        @Param lc: the label of the left corner item to spawn from.
-        @Type i: integer
-        @Param i: the index of the cell where the empty edges are to go.
+        :type lc: string
+        :param lc: the label of the left corner item to spawn from.
+        :type i: integer
+        :param i: the index of the cell where the empty edges are to go.
+
+        >>> ch = Chart([])
+        >>> ch.spawn('Np', 0)
+        >>> ch.agenda.pop()
+        Edge(Np,0,0,('Np', 'conj', 'Np'))@3.5752e-01
         """
         for rule in GRAMMAR:
             lhs = rule.lhs
             rhs = rule.rhs
             if rhs[0] == lc:
-                self.agenda.append(Edge(lhs, i, i, tuple(rhs)))
+                self.agenda.append(Edge(lhs, i, i, 
+                                        tuple(rhs),
+                                        probability=rule.probability
+                                        ))
 
     def incorporate(self, e):
         """
@@ -284,12 +343,18 @@ gave rise to them: empty for edges not created by fundamental rule
         @Param e: the edge to be added
         """
         if e.iscomplete():
-            if e not in self.completes[e.left]:
+            if e in self.completes[e.left]:
+                #update probability sum
+                pass
+            else:
                 self.completes[e.left].add(e)
                 self.spawn(e.label, e.left)
                 self.pairwithpartials(self.partials[e.left], e)
         elif e.ispartial():
-            if e not in self.partials[e.right]:
+            if e in self.partials[e.right]:
+                # update probability sum
+                pass
+            else:
                 self.partials[e.right].add(e)
                 self.pairwithcompletes(e, self.completes[e.right])
         else:
@@ -364,7 +429,7 @@ def treestring(t, tab=0):
     return s
 
 
-def parse(sentence):
+def parse(sentence, verbose=False):
     """
     Print out the parses of a sentence
 
@@ -391,15 +456,74 @@ def parse(sentence):
       Vp
        v suffer
     1 parses
+    >>> parse(["the","pigeons",'are','punished','and','they','suffer','and','they', 'suffer'])
+    ['the', 'pigeons', 'are', 'punished', 'and', 'they', 'suffer', 'and', 'they', 'suffer']
+    Parse 1:
+    S
+     S
+      S
+       Np
+        det the
+        Nn
+         n pigeons
+       cop are
+       ppart punished
+      conj and
+      S
+       Np
+        pn they
+       Vp
+        v suffer
+     conj and
+     S
+      Np
+       pn they
+      Vp
+       v suffer
+    Parse 2:
+    S
+     S
+      Np
+       det the
+       Nn
+        n pigeons
+      cop are
+      ppart punished
+     conj and
+     S
+      S
+       Np
+        pn they
+       Vp
+        v suffer
+      conj and
+      S
+       Np
+        pn they
+       Vp
+        v suffer
+    2 parses
+
     """
     v = Chart(sentence)
     print sentence
     i = 0
     for e in v.solutions('S'):
+        if verbose:
+            print "Probability:{p:.4}".format(p=e.probability)
         for tree in v.trees(e):
             i += 1
             print "Parse %d:" % i
             print treestring(tree),
     print i, "parses"
 
+def aas_grammar():
+    """
+    >>> x = aas_grammar()
+    """
 
+    ch = Chart(["a","a","a"],grammar=Grammar(
+            """S -> S S
+S -> a""","a a"))
+    return ch
+                      
