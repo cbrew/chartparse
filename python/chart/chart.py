@@ -37,6 +37,8 @@ S
 
 from english import GRAMMAR, Grammar
 from collections import defaultdict, deque
+from Queue import PriorityQueue
+
 
 def _pmul(p1,p2):
     if p1 and p2:
@@ -80,6 +82,10 @@ class Edge(object):
     when a child edge is updated, this invalidates the previous calculations
     for all higher edges that depend on it. We are definitely not doing this
     right yet.
+
+    XXX drop this and make the agenda into a priority queue, organized so that
+    shorter edges are processed before longer.
+    
 
     """
 
@@ -167,6 +173,37 @@ reference/datamodel.html#object.__repr__}
             needed=self.needed,
             probability=self.probability)
 
+
+    def __lt__(self, other):
+        """
+        Rich comparison for edges.
+
+        Assumes that other really is an edge.
+        """
+        assert isinstance(other,Edge)
+
+        t1 = (self.span_length(),
+              self.left,
+              self.right,
+              self.label,
+              self.needed)
+        t2 = (other.span_length(),
+              other.left,
+              other.right,
+              other.label,
+              other.needed)
+        return t1 < t1
+
+    def __gt__(self,other):
+        return other < self
+
+
+    def span_length(self):
+        """
+        Return the length of a span.
+        """
+        return self.right - self.left
+
     def __eq__(self, other):
         """
         This method is required if we want to make Edges usable in
@@ -205,7 +242,7 @@ gave rise to them: empty for edges not created by fundamental rule
     @Ivar agenda: The list of edges still remaining to be incorporated.
     """
 
-    def __init__(self, words):
+    def __init__(self, words,grammar=GRAMMAR,verbose=False):
         """
         Create and run the parser
 
@@ -213,14 +250,20 @@ gave rise to them: empty for edges not created by fundamental rule
         @Param words: the words to be parsed.
         """
         Edge.clear()
+        self.verbose = verbose
+        self.grammar = GRAMMAR
         self.partials = [set() for _ in range(len(words) + 1)]
         self.completes = [set() for _ in range(len(words) + 1)]
         self.prev = defaultdict(set)
-        self.agenda = deque()
+        self.agenda = PriorityQueue()
         for i in range(len(words)):
-            self.agenda.append(self.lexical(words[i], i))
-        while self.agenda:
-            self.incorporate(self.agenda.popleft())
+            self.agenda.put(self.lexical(words[i], i))
+        while not self.agenda.empty():
+            item = self.agenda.get(block=False)
+            if self.verbose:
+                print item
+            self.incorporate(item)
+            self.agenda.task_done()
 
     def lexical(self, word, i):
         """
@@ -288,7 +331,7 @@ gave rise to them: empty for edges not created by fundamental rule
         for p in partials:
             if e.label == p.needed[0]:
                 probability = _pmul(e.probability,p.probability)
-                self.agenda.append(
+                self.agenda.put(
                     self.add_prev(Edge(p.label, p.left, e.right,
                                        p.needed[1:],
                                        probability=probability),e))
@@ -308,13 +351,16 @@ gave rise to them: empty for edges not created by fundamental rule
         for c in completes:
             if e.needed[0] == c.label:
                 probability = _pmul(e.probability,c.probability)
-                self.agenda.append(
+                self.agenda.put(
                     self.add_prev(Edge(e.label, e.left,
                                        c.right, e.needed[1:],probability=probability), c))
 
     def spawn(self, lc, i):
         """
         Spawn empty edges from the rules that match C{lc}.
+        a spawned edge need only be added the first time that 
+        it is predicted. Its probability does not depend on how 
+        many times it is predicted.
 
         :type lc: string
         :param lc: the label of the left corner item to spawn from.
@@ -323,17 +369,19 @@ gave rise to them: empty for edges not created by fundamental rule
 
         >>> ch = Chart([])
         >>> ch.spawn('Np', 0)
-        >>> ch.agenda.pop()
-        Edge(Np,0,0,('Np', 'conj', 'Np'))@3.5752e-01
+        >>> ch.agenda.get(block=False)
+        Edge(S,0,0,('Np', 'Vp'))@3.9005e-01
         """
-        for rule in GRAMMAR:
+        for rule in self.grammar:
             lhs = rule.lhs
             rhs = rule.rhs
             if rhs[0] == lc:
-                self.agenda.append(Edge(lhs, i, i, 
-                                        tuple(rhs),
-                                        probability=rule.probability
-                                        ))
+                e = Edge(lhs, i, i, 
+                         tuple(rhs),
+                         probability=rule.probability
+                         )
+                if e not in self.partials[e.left]:
+                    self.agenda.put(e)
 
     def incorporate(self, e):
         """
@@ -505,12 +553,10 @@ def parse(sentence, verbose=False):
     2 parses
 
     """
-    v = Chart(sentence)
+    v = Chart(sentence,verbose=verbose)
     print sentence
     i = 0
     for e in v.solutions('S'):
-        if verbose:
-            print "Probability:{p:.4}".format(p=e.probability)
         for tree in v.trees(e):
             i += 1
             print "Parse %d:" % i
