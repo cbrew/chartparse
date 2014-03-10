@@ -366,6 +366,9 @@ gave rise to them: empty for edges not created by fundamental rule
                         prev.probability += e.probability
             else:
                 self.completes[e.left].add(e)
+                # TODO the empty edge produced by spawn
+                # will immedidately combine with e
+                # so we could make the result directly.
                 self.spawn(e.label, e.left)
                 self.pairwithpartials(self.partials[e.left], e)
         elif e.ispartial():
