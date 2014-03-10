@@ -1,17 +1,12 @@
 """
 This is a bottom-up chart parser for a fragment of English.
 It uses the active chart datastructure. The design is based
-on Steve Isard's B{LIB CHART}, a teaching tool (written in 1983) that
+on Steve Isard's LIB CHART, a teaching tool (written in 1983) that
 comes with the wonderful Poplog AI development environment
-(Details at U{http://www.poplog.org/gospl/packages/pop11/lib/chart.p}
-and U{http://www.poplog.org})
+(Details at http://www.poplog.org/gospl/packages/pop11/lib/chart.p
+and http://www.poplog.org)
 
-@Author: Chris Brew
-@Date: April 2009
-@Copyright: Chris Brew, 2009
-@License: Apache License 2.0
-@Contact: christopher.brew@gmail.com
-
+.. moduleauthor: Chris Brew
 
 >>> parse(["the","pigeons",'are','punished','and','they','suffer'])
 ['the', 'pigeons', 'are', 'punished', 'and', 'they', 'suffer']
@@ -36,20 +31,23 @@ S
 """
 
 from english import GRAMMAR, Grammar
-from collections import defaultdict, deque
+from collections import defaultdict
 from Queue import PriorityQueue
 
 
-def _pmul(p1,p2):
+def _pmul(p1, p2):
+    """
+    Multiply probabilities.
+
+    
+    """
     if p1 and p2:
-        return p1*p2
+        return p1 * p2
     else:
         return None
 
 
 class Edge(object):
-    __slots__ = ('label', 'left', 'right', 'needed')
-
     """
     An edge is an assertion about some span of the text. It has a left and
     right boundary, a label, and a sequence of needs. If it has no needs,
@@ -63,38 +61,14 @@ class Edge(object):
     :ivar right: the index of the right boundary of the edge.
     :type needed: tuple of strings
     :ivar needed: strings representing the categories that the edge needs.
-    :type _p: float
-    :ivar _p: the inside probability of the edge.
+    :type probability: float
+    :ivar probability: the inside probability of the edge.
 
     >>> x = Edge('s',0,1,(), 0.5)
 
-    
     """
+    __slots__ = ('label', 'left', 'right', 'needed', 'probability')
 
-    
-    _p = defaultdict(float)
-    """
-    Caution! this is tricky. Edges are associated with probabilities
-    via this global dictionary.
-
-    The reason for this is that we want to add probabilities of different
-    ways of making the same edge. But it is really hard to get right, because
-    when a child edge is updated, this invalidates the previous calculations
-    for all higher edges that depend on it. We are definitely not doing this
-    right yet.
-
-    XXX drop this and make the agenda into a priority queue, organized so that
-    shorter edges are processed before longer.
-    
-
-    """
-
-    @staticmethod
-    def clear():
-        """
-        reset the probability table.
-        """
-        Edge._p = defaultdict(float)
 
 
     def __init__(self, label, left, right, needed, probability=None):
@@ -115,18 +89,6 @@ class Edge(object):
         self.right = right
         self.needed = needed
         self.probability = probability
-
-
-    @property
-    def probability(self):
-        return Edge._p[self]
-
-    @probability.setter
-    def probability(self, value):
-        if value is None:
-            Edge._p[self] = None
-        else:
-            Edge._p[self] += value
 
     def iscomplete(self):
         """
@@ -160,19 +122,26 @@ class Edge(object):
         This method is part of Python's infrastructure for printing.
         It produces a textual description of the Edge.
 
-        @See: U{http://docs.python.org/\
-reference/datamodel.html#object.__repr__}
+        See: http://docs.python.org/\
+reference/datamodel.html#object.__repr__
         """
+        if self.iscomplete() and isinstance(self.probability, float):
+            template = 'C({label},{lhs},{rhs})@{probability:0.4f}'
+        elif self.iscomplete() and (self.probability is None):
+            template = 'C({label},{lhs},{rhs})'
+        elif self.ispartial and isinstance(self.probability, float):
+            template = 'P({label},{lhs},{rhs},{needed})@{probability:0.4f}'
+        elif self.ispartial and (self.probability is None):
+            template = 'P({label},{lhs},{rhs},{needed})'
+        else:
+            raise ValueError('edge not printable')
 
-        return ("Edge({label},{left},{right},{needed})@{probability:.4e}"
-                if self.probability
-                else "Edge({label},{left},{right},{needed})").format(\
+        return template.format(
             label=self.label,
-            left=self.left,
-            right=self.right,
+            lhs=self.left,
+            rhs=self.right,
             needed=self.needed,
             probability=self.probability)
-
 
     def __lt__(self, other):
         """
@@ -180,7 +149,7 @@ reference/datamodel.html#object.__repr__}
 
         Assumes that other really is an edge.
         """
-        assert isinstance(other,Edge)
+        assert isinstance(other, Edge)
 
         t1 = (self.span_length(),
               self.left,
@@ -194,9 +163,8 @@ reference/datamodel.html#object.__repr__}
               other.needed)
         return t1 < t1
 
-    def __gt__(self,other):
+    def __gt__(self, other):
         return other < self
-
 
     def span_length(self):
         """
@@ -242,16 +210,16 @@ gave rise to them: empty for edges not created by fundamental rule
     @Ivar agenda: The list of edges still remaining to be incorporated.
     """
 
-    def __init__(self, words,grammar=GRAMMAR,verbose=False):
+    def __init__(self, words, grammar=GRAMMAR, verbose=False):
         """
         Create and run the parser
 
         @Type words: list of string.
         @Param words: the words to be parsed.
         """
-        Edge.clear()
+
         self.verbose = verbose
-        self.grammar = GRAMMAR
+        self.grammar = grammar.grammar
         self.partials = [set() for _ in range(len(words) + 1)]
         self.completes = [set() for _ in range(len(words) + 1)]
         self.prev = defaultdict(set)
@@ -274,7 +242,7 @@ gave rise to them: empty for edges not created by fundamental rule
         @Type i: integer
         @Param i: where the edge starts
         """
-        return Edge(word, i, i + 1, (),probability=1.0)
+        return Edge(word, i, i + 1, (), probability=1.0)
 
     def solutions(self, topCat):
         """
@@ -317,24 +285,24 @@ gave rise to them: empty for edges not created by fundamental rule
     def pairwithpartials(self, partials, e):
         """
         Run the fundamental rule for everything in
-        C{partials} that goes with C{e}.
+        partials that goes with e.
 
         Updates the C{agenda} by adding to its end.
 
         Probabilities, if present, are propagated.
 
-        @Type partials: set<Edge>
-        @Param partials: the potential partners of e
-        @Type e: Edge
-        @Param e: The complete edge that should be completed
+        :type partials: set<Edge>
+        :aram partials: the potential partners of e
+        :type e: Edge
+        :param e: The complete edge that should be completed
         """
         for p in partials:
             if e.label == p.needed[0]:
-                probability = _pmul(e.probability,p.probability)
+                probability = _pmul(e.probability, p.probability)
                 self.agenda.put(
                     self.add_prev(Edge(p.label, p.left, e.right,
                                        p.needed[1:],
-                                       probability=probability),e))
+                                       probability=probability), e))
 
     def pairwithcompletes(self, e, completes):
         """
@@ -350,16 +318,17 @@ gave rise to them: empty for edges not created by fundamental rule
         """
         for c in completes:
             if e.needed[0] == c.label:
-                probability = _pmul(e.probability,c.probability)
+                probability = _pmul(e.probability, c.probability)
                 self.agenda.put(
                     self.add_prev(Edge(e.label, e.left,
-                                       c.right, e.needed[1:],probability=probability), c))
+                                       c.right, e.needed[1:],
+                                       probability=probability), c))
 
     def spawn(self, lc, i):
         """
         Spawn empty edges from the rules that match C{lc}.
-        a spawned edge need only be added the first time that 
-        it is predicted. Its probability does not depend on how 
+        a spawned edge need only be added the first time that
+        it is predicted. Its probability does not depend on how
         many times it is predicted.
 
         :type lc: string
@@ -370,13 +339,13 @@ gave rise to them: empty for edges not created by fundamental rule
         >>> ch = Chart([])
         >>> ch.spawn('Np', 0)
         >>> ch.agenda.get(block=False)
-        Edge(S,0,0,('Np', 'Vp'))@3.9005e-01
+        P(S,0,0,('Np', 'Vp'))@0.3901
         """
         for rule in self.grammar:
             lhs = rule.lhs
             rhs = rule.rhs
             if rhs[0] == lc:
-                e = Edge(lhs, i, i, 
+                e = Edge(lhs, i, i,
                          tuple(rhs),
                          probability=rule.probability
                          )
@@ -392,16 +361,18 @@ gave rise to them: empty for edges not created by fundamental rule
         """
         if e.iscomplete():
             if e in self.completes[e.left]:
-                #update probability sum
-                pass
+                for prev in self.completes[e.left]:
+                    if prev == e:
+                        prev.probability += e.probability
             else:
                 self.completes[e.left].add(e)
                 self.spawn(e.label, e.left)
                 self.pairwithpartials(self.partials[e.left], e)
         elif e.ispartial():
             if e in self.partials[e.right]:
-                # update probability sum
-                pass
+                for prev in self.partials[e.right]:
+                    if prev == e:
+                        prev.probability += e.probability
             else:
                 self.partials[e.right].add(e)
                 self.pairwithcompletes(e, self.completes[e.right])
@@ -504,56 +475,9 @@ def parse(sentence, verbose=False):
       Vp
        v suffer
     1 parses
-    >>> parse(["the","pigeons",'are','punished','and','they','suffer','and','they', 'suffer'])
-    ['the', 'pigeons', 'are', 'punished', 'and', 'they', 'suffer', 'and', 'they', 'suffer']
-    Parse 1:
-    S
-     S
-      S
-       Np
-        det the
-        Nn
-         n pigeons
-       cop are
-       ppart punished
-      conj and
-      S
-       Np
-        pn they
-       Vp
-        v suffer
-     conj and
-     S
-      Np
-       pn they
-      Vp
-       v suffer
-    Parse 2:
-    S
-     S
-      Np
-       det the
-       Nn
-        n pigeons
-      cop are
-      ppart punished
-     conj and
-     S
-      S
-       Np
-        pn they
-       Vp
-        v suffer
-      conj and
-      S
-       Np
-        pn they
-       Vp
-        v suffer
-    2 parses
 
     """
-    v = Chart(sentence,verbose=verbose)
+    v = Chart(sentence, verbose=verbose)
     print sentence
     i = 0
     for e in v.solutions('S'):
@@ -563,13 +487,23 @@ def parse(sentence, verbose=False):
             print treestring(tree),
     print i, "parses"
 
+
 def aas_grammar():
     """
-    >>> x = aas_grammar()
+    >>> aas_grammar()
     """
 
-    ch = Chart(["a","a","a"],grammar=Grammar(
-            """S -> S S
-S -> a""","a a"))
-    return ch
-                      
+    v = Chart(["a", "a", "a"], grammar=Grammar(
+        """S -> S S
+S -> w""", "a w"))
+
+    print v.completes
+    """
+    i = 0
+    for e in v.solutions('S'):
+        for tree in v.trees(e):
+            i += 1
+            print "Parse %d:" % i
+            print treestring(tree),
+    print i, "parses"
+    """

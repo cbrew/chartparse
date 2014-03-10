@@ -8,26 +8,30 @@ University of Sussex. The vocabulary is designed to amuse
 undergraduate Experimental Psychology students, hence the
 references to pigeons and cages.
 
-The grammar is almost entirely Steve's. Chris Brew modified the 
-production
+The grammar is almost entirely Steve's original. The only changes
+are a few words, proper names, and the production:
 
-    NP -> det Nn PP 
+    NP -> det Nn PP
 
-to read 
+which was changed to
 
-    NP -> NP PP 
+    NP -> NP PP
 
-because he wantedCatalan number behaviour with multiple modification.
-In addition, he added some words and names. As in the
-original LIB CHART, features on the categories
-are (um!) inoperative.
+The intent is to demonstrate ambiguous grouping of modifiers.
+
+As in the original LIB CHART, features on the categories
+are ignored. There are three features used _case_, _num_ and
+_tr_.
 """
 
 from collections import namedtuple, defaultdict
 import numpy.random as npr
 import numpy as np
 
+
 class Rule(namedtuple("Rule", ("lhs", "rhs", "probability"))):
+    __slots__ = ()
+
     """One production of a context-free grammar.
 
     .. attribute:: lhs
@@ -39,10 +43,11 @@ class Rule(namedtuple("Rule", ("lhs", "rhs", "probability"))):
         The right hand side of the rule.
 
     .. attribute:: probability
-    
+
         The probability `P(rhs|lhs)`.
 
 """
+
 
 class Grammar(object):
 
@@ -54,15 +59,16 @@ class Grammar(object):
     Rule(lhs='S', rhs=['Np', 'Vp'], probability=0.39005498145500445)
     """
 
-    def __init__(self, grammar, lexicon):
+    def __init__(self, grammar, lexicon, state=None):
         """
         Create a grammar from strings.
 
         :type grammar: string
         :param grammar: the grammar rules, in the form lhs -> rhs (|rhs)*
         :type lexicon:  string
-        :param lexicon: the words, in the form word category+ 
+        :param lexicon: the words, in the form word category+
         """
+        self.state = (npr.RandomState(42) if state is None else state)
         self.grammar = self.__rulify(grammar) + self.__lexicalize(lexicon)
         self._probabilize()
 
@@ -81,7 +87,7 @@ class Grammar(object):
         >>> g.test_state
         0.3745401188473625
         """
-        state = npr.RandomState(42)
+        state = self.state
         self.test_state = state.rand()
         self.grammar = [Rule(lhs=r.lhs,
                              rhs=r.rhs,
@@ -93,7 +99,7 @@ class Grammar(object):
     def _normalize(self):
         """
         Ensure that each P(rhs|lhs) is
-        a normalized probability 
+        a normalized probability
         distribution.
 
         >>> g = Grammar(RULES, WORDS)
@@ -244,4 +250,4 @@ was cop(num:sing)
 were cop(num:pl)"""
 
 
-GRAMMAR = Grammar(RULES, WORDS).grammar
+GRAMMAR = Grammar(RULES, WORDS)
