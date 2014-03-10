@@ -6,8 +6,6 @@ comes with the wonderful Poplog AI development environment
 (Details at http://www.poplog.org/gospl/packages/pop11/lib/chart.p
 and http://www.poplog.org)
 
-.. moduleauthor: Chris Brew
-
 >>> parse(["the","pigeons",'are','punished','and','they','suffer'])
 ['the', 'pigeons', 'are', 'punished', 'and', 'they', 'suffer']
 Parse 1:
@@ -35,11 +33,22 @@ from collections import defaultdict
 from Queue import PriorityQueue
 
 
-def _pmul(p1, p2):
-    """
-    Multiply probabilities.
+def pmul(p1, p2):
+    """Multiply probabilities.
 
+    Parameters
+    ----------
+    p1 : float or None
+        The first probability.
+    p2: float or None
+        The second probability,
+
+    Returns
+    -------
     
+    product: float or None
+      The product of the probabilities, or None
+      when both are not available,
     """
     if p1 and p2:
         return p1 * p2
@@ -197,11 +206,11 @@ class Chart(object):
 
     """An active chart parser.
 
-    @Type partials: list<set<Edge>>
-    @Ivar partials: a list of sets Partial edges ending in \
+    :type partials: list<set<Edge>>
+    :ivar partials: a list of sets Partial edges ending in \
 position i are stored in partials[i]
-    @Type completes: list<set<Edge>>
-    @Ivar completes: a list of sets Complete edges \
+    :type completes: list<set<Edge>>
+    :ivar completes: a list of sets Complete edges \
 starting in position i are stored in completes[i]
     @Type prev: defaultdict<set<Edge>>
     @Ivar prev: mapping from edges to the complete edges that \
@@ -298,7 +307,7 @@ gave rise to them: empty for edges not created by fundamental rule
         """
         for p in partials:
             if e.label == p.needed[0]:
-                probability = _pmul(e.probability, p.probability)
+                probability = pmul(e.probability, p.probability)
                 self.agenda.put(
                     self.add_prev(Edge(p.label, p.left, e.right,
                                        p.needed[1:],
