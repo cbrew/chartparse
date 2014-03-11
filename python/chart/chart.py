@@ -465,9 +465,14 @@ def parse(sentence, verbose=False):
     Print out the parses of a sentence
 
 
-    @Type sentence: list<string>
-    @Param sentence: the words to be parsed
+    Parameters
+    ----------
 
+    sentence: list<string>
+        the words to be parsed.
+
+    Examples
+    --------
 
     >>> parse(["the","pigeons",'are','punished','and','they','suffer'])
     ['the', 'pigeons', 'are', 'punished', 'and', 'they', 'suffer']
@@ -502,6 +507,10 @@ def parse(sentence, verbose=False):
 
 def aas_grammar():
     """
+
+    Examples
+    --------
+
     >>> aas_grammar()
     """
 
