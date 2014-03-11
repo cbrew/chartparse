@@ -43,7 +43,7 @@ import numpy.random as npr
 import numpy as np
 
 
-class Rule(namedtuple("Rule", ("lhs", "rhs", "probability"))):
+class Rule(namedtuple("Rule", ("lhs", "rhs", "p_"))):
 
     """One production of a context-free grammar.
 
@@ -53,10 +53,49 @@ class Rule(namedtuple("Rule", ("lhs", "rhs", "probability"))):
         The left hand side of the rule.
     rhs: list [string]
         The right hand side of the rule.
-    probability: float
+    p_: float
         The probability `P(rhs|lhs)`.
 
     """
+    def __new__(cls, lhs, rhs, probability):
+        self = super(Rule, cls).__new__(cls, lhs=lhs,rhs=rhs,p_=probability)
+        return self
+
+    def __repr__(self):
+        return "Rule(lhs='{lhs}', rhs={rhs}, probability={probability:0.4})".format(
+                lhs=self.lhs,
+                rhs=self.rhs,
+                probability=self.probability)
+
+
+
+    @property
+    def probability(self):
+        """Getter for probabilities.
+
+        Provided to allow parameter tying 
+        in future.
+
+        """
+        return self.p_
+
+    @probability.setter
+    def probability(self,value):
+        """Setter for probabilities.
+
+        Provided to allow parameter tying 
+        in future.
+
+        Parameters
+        ==========
+        value: float or None
+            the new probability value
+
+        """
+        self.p_ = value
+
+
+
     __slots__ = ()
 
 class Grammar(object):
@@ -75,7 +114,7 @@ class Grammar(object):
     --------
     >>> g = Grammar(RULES, WORDS)
     >>> g.grammar[0]
-    Rule(lhs='S', rhs=['Np', 'Vp'], probability=0.39005498145500445)
+    Rule(lhs='S', rhs=['Np', 'Vp'], probability=0.3901)
 
     """
 
