@@ -1,5 +1,3 @@
-doc: chart.py english.py
-	(cd docs; make html)
 clean:
 	rm -rf *.pyc html
 test: chart.py english.py
