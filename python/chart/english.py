@@ -16,7 +16,7 @@ which was changed to
 
 The intent is to demonstrate ambiguous grouping of modifiers.
 
-As in the original LIB CHART, features on the categories
+As in the original LIB CHART _[1], features on the categories
 are ignored. There are three features used `case`, `num` and
 `tr`. Thy could reasonably be handled in this file, via
 compilation to a plain CFG, since their purpose is only
@@ -25,7 +25,7 @@ to enforce agreement.
 References
 ----------
 
-The original LIB CHART [1]_ and the Poplog website [2]_
+The original LIB CHART [1]_
 
 .. [1] http://www.poplog.org/gospl/packages/pop11/lib/chart.p
 
