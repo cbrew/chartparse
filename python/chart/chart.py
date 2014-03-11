@@ -47,7 +47,8 @@ S
 
 from english import GRAMMAR, Grammar
 from collections import defaultdict
-from Queue import PriorityQueue
+from heapq import heappush as hpush
+from heapq import heappop as hpop
 
 
 def pmul(p1, p2):
@@ -279,15 +280,14 @@ class Chart(object):
         self.partials = [set() for _ in range(len(words) + 1)]
         self.completes = [set() for _ in range(len(words) + 1)]
         self.prev = defaultdict(set)
-        self.agenda = PriorityQueue()
+        self.agenda = []
         for i in range(len(words)):
-            self.agenda.put(self.lexical(words[i], i))
-        while not self.agenda.empty():
-            item = self.agenda.get(block=False)
+            hpush(self.agenda,self.lexical(words[i], i))
+        while self.agenda:
+            item = hpop(self.agenda)
             if self.verbose:
                 print item
             self.incorporate(item)
-            self.agenda.task_done()
 
     def lexical(self, word, i):
         """
@@ -380,7 +380,7 @@ class Chart(object):
         for p in partials:
             if e.label == p.needed[0]:
                 probability = pmul(e.probability, p.probability)
-                self.agenda.put(
+                hpush(self.agenda,
                     self.add_prev(Edge(p.label, p.left, e.right,
                                        p.needed[1:],
                                        probability=probability), e))
@@ -406,7 +406,7 @@ class Chart(object):
         for c in completes:
             if e.needed[0] == c.label:
                 probability = pmul(e.probability, c.probability)
-                self.agenda.put(
+                hpush(self.agenda,
                     self.add_prev(Edge(e.label, e.left,
                                        c.right, e.needed[1:],
                                        probability=probability), c))
@@ -433,7 +433,7 @@ class Chart(object):
         --------
         >>> ch = Chart([])
         >>> ch.spawn('Np', 0)
-        >>> ch.agenda.get(block=False)
+        >>> ch.agenda[0]
         P(Np,0,0,('Np', 'Pp'))@0.0345
         """
         for rule in self.grammar:
@@ -445,7 +445,7 @@ class Chart(object):
                          probability=rule.probability
                          )
                 if e not in self.partials[e.left]:
-                    self.agenda.put(e)
+                    hpush(self.agenda,e)
 
     def incorporate(self, e):
         """
