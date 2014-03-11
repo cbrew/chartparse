@@ -5,5 +5,5 @@ Some of the names are the same, but Steve is not to blame for anything that this
 does, except perhaps the grammar. This last was designed to amuse Experimental
 Psychology students in 1983 or so.
 
-Needs: Python 2.5-2.7  http://www.python.org/
-       Epydoc (for html api documentation) http://epydoc.sourceforge.net/
+Needs: Python -2.7  http://www.python.org/
+
