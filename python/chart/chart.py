@@ -45,10 +45,16 @@ S
 # license: Apache 2.0
 ##
 
-from english import GRAMMAR, Grammar
+
 from collections import defaultdict
 from heapq import heappush as hpush
 from heapq import heappop as hpop
+
+from english import GRAMMAR, Grammar
+import english
+
+
+punity = 1.0
 
 def padd(p1, p2):
     """Add probabilities.
@@ -336,7 +342,7 @@ class Chart(object):
             where the edge starts
 
         """
-        return Edge(word, i, i + 1, (), probability=1.0)
+        return Edge(word, i, i + 1, (), probability=punity)
 
     def solutions(self, topCat):
         """
@@ -660,13 +666,35 @@ def aas_grammar():
     --------
 
     >>> aas_grammar()
+    S
+     S
+      S
+       A a
+      S
+       A a
+     S
+      A a
+    <BLANKLINE>
+    S
+     S
+      A a
+     S
+      S
+       A a
+      S
+       A a
+    <BLANKLINE>
+
     """
 
     v = Chart(["a", "a", "a"], grammar=Grammar(
-        """S -> S S
-S -> w""", "a w"))
+            """S -> S S
+    S -> A""", "a A",state=english.UniformState()))
 
-    print v.completes
+    x = v.solutions('S')
+    for t in v.trees(x[0]):
+        print treestring(t)
+        # print t.probability
     """
     i = 0
     for e in v.solutions('S'):

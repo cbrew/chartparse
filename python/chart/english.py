@@ -43,7 +43,7 @@ import numpy.random as npr
 import numpy as np
 
 
-class Rule(namedtuple("Rule", ("lhs", "rhs", "p_"))):
+class Rule(namedtuple("Rule", ("lhs", "rhs", "p"))):
 
     """One production of a context-free grammar.
 
@@ -53,12 +53,12 @@ class Rule(namedtuple("Rule", ("lhs", "rhs", "p_"))):
         The left hand side of the rule.
     rhs: list [string]
         The right hand side of the rule.
-    p_: float
+    p: float
         The probability `P(rhs|lhs)`.
 
     """
     def __new__(cls, lhs, rhs, probability):
-        self = super(Rule, cls).__new__(cls, lhs=lhs,rhs=rhs,p_=probability)
+        self = super(Rule, cls).__new__(cls, lhs=lhs,rhs=rhs,p=probability)
         return self
 
     def __repr__(self):
@@ -66,6 +66,7 @@ class Rule(namedtuple("Rule", ("lhs", "rhs", "p_"))):
                 lhs=self.lhs,
                 rhs=self.rhs,
                 probability=self.probability)
+
 
 
 
@@ -77,7 +78,7 @@ class Rule(namedtuple("Rule", ("lhs", "rhs", "p_"))):
         in future.
 
         """
-        return self.p_
+        return self.p
 
     @probability.setter
     def probability(self,value):
@@ -91,12 +92,35 @@ class Rule(namedtuple("Rule", ("lhs", "rhs", "p_"))):
         value: float or None
             the new probability value
 
+        Examples
+        --------
+        >>> r = Rule('s',('np','vp'),probability=0.3)
+        >>> r.probability = 0.44
+        >>> r.probability
+        0.44
         """
-        self.p_ = value
+        self.p = value
 
 
 
     __slots__ = ()
+
+
+sample = """S -> NP VP
+S -> S conj S"""
+class UniformState:
+    """
+    Analogue of RandomState that always  returns 1.0. 
+    Intent is to allow grammars with uniform distributions.
+
+    Examples
+    --------
+    >>> Grammar(sample, "and conj",state=UniformState()).grammar[0].probability
+    0.5
+
+    """
+    def rand(self):
+        return 1.0
 
 class Grammar(object):
 
@@ -109,6 +133,8 @@ class Grammar(object):
         the grammar rules, lines of the form `lhs -> rhs (|rhs)*`
     lexicon:  string
         the words, lines of the form `word category+`
+    state: state
+        generates initial probabilities.
 
     Examples
     --------
@@ -126,6 +152,9 @@ class Grammar(object):
         self.state = (npr.RandomState(42) if state is None else state)
         self.grammar = self.__rulify(grammar) + self.__lexicalize(lexicon)
         self._probabilize()
+
+    def make_rule(self,lhs,rhs,probability):
+            return Rule(lhs=lhs, rhs=rhs, probability=probability)
 
     def _probabilize(self):
         """
@@ -147,9 +176,9 @@ class Grammar(object):
         """
         state = self.state
         self.test_state = state.rand()
-        self.grammar = [Rule(lhs=r.lhs,
-                             rhs=r.rhs,
-                             probability=state.rand())
+        self.grammar = [self.make_rule(r.lhs,
+                                        r.rhs,
+                                        state.rand())
                         for r in self.grammar
                         ]
         self._normalize()
