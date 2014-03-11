@@ -1,7 +1,4 @@
-"""A grammar for chartparse,
-
-.. moduleauthor: Steve Isard
-.. moduleauthor: Chris Brew
+"""An English grammar for chartparse.
 
 This grammar was originally written by Steve Isard at the
 University of Sussex. The vocabulary is designed to amuse
@@ -20,9 +17,26 @@ which was changed to
 The intent is to demonstrate ambiguous grouping of modifiers.
 
 As in the original LIB CHART, features on the categories
-are ignored. There are three features used _case_, _num_ and
-_tr_.
+are ignored. There are three features used `case`, `num` and
+`tr`. Thy could reasonably be handled in this file, via
+compilation to a plain CFG, since their purpose is only
+to enforce agreement.
+
+References
+----------
+
+The original LIB CHART [1]_ and the Poplog website [2]_
+
+.. [1] http://www.poplog.org/gospl/packages/pop11/lib/chart.p
+
 """
+
+##
+# Created 10 March 2014
+# author: Chris Brew
+# author: Stephen Isard
+# license: Apache 2.0
+##
 
 from collections import namedtuple, defaultdict
 import numpy.random as npr
@@ -30,43 +44,45 @@ import numpy as np
 
 
 class Rule(namedtuple("Rule", ("lhs", "rhs", "probability"))):
-    __slots__ = ()
 
     """One production of a context-free grammar.
 
-    .. attribute:: lhs
-
-       The left hand side of the rule.
-
-    .. attribute:: rhs
-
+    Attributes
+    ----------
+    lhs: string
+        The left hand side of the rule.
+    rhs: list [string]
         The right hand side of the rule.
-
-    .. attribute:: probability
-
+    probability: float
         The probability `P(rhs|lhs)`.
 
-"""
-
+    """
+    __slots__ = ()
 
 class Grammar(object):
 
     """
     Class for creating grammars from text strings.
 
+    Parameters
+    ----------
+    grammar: string
+        the grammar rules, lines of the form `lhs -> rhs (|rhs)*`
+    lexicon:  string
+        the words, lines of the form `word category+`
+
+    Examples
+    --------
     >>> g = Grammar(RULES, WORDS)
     >>> g.grammar[0]
     Rule(lhs='S', rhs=['Np', 'Vp'], probability=0.39005498145500445)
+
     """
 
     def __init__(self, grammar, lexicon, state=None):
         """
         Create a grammar from strings.
 
-        :type grammar: string
-        :param grammar: the grammar rules, in the form lhs -> rhs (|rhs)*
-        :type lexicon:  string
-        :param lexicon: the words, in the form word category+
         """
         self.state = (npr.RandomState(42) if state is None else state)
         self.grammar = self.__rulify(grammar) + self.__lexicalize(lexicon)
@@ -75,6 +91,7 @@ class Grammar(object):
     def _probabilize(self):
         """
         Rules all take the form lhs -> rhs.
+
         Add some probabilities.
 
         The grammar was hand-written, we therefore
@@ -83,6 +100,8 @@ class Grammar(object):
         random, being careful to normalize at the
         end.
 
+        Examples
+        --------
         >>> g = Grammar(RULES, WORDS)
         >>> g.test_state
         0.3745401188473625
@@ -98,10 +117,12 @@ class Grammar(object):
 
     def _normalize(self):
         """
-        Ensure that each P(rhs|lhs) is
+        Ensure that each `P(rhs|lhs)` is
         a normalized probability
         distribution.
 
+        Examples
+        --------
         >>> g = Grammar(RULES, WORDS)
         >>> g.normalized()
         True
@@ -115,6 +136,10 @@ class Grammar(object):
                         for r in self.grammar]
 
     def normalized(self):
+        """
+        Test whether grammar is normalized.
+        
+        """
         totals_for_lhs = defaultdict(float)
         for r in self.grammar:
             totals_for_lhs[r.lhs] += r.probability

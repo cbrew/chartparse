@@ -3,21 +3,25 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to ChartParse's documentation!
-======================================
-
-Contents:
+ChartParse: a bottom-up chart parser
+====================================
 
 .. toctree::
    :maxdepth: 2
 
+The parser
+==========
+
 .. automodule:: chart
-   :members:
+   	:members:
 
 
-
+The English grammar
+=================== 
+	
 .. automodule:: english
-   :members:
+	:members:
+ 
 
 
 Indices and tables

@@ -3,18 +3,16 @@ This is a bottom-up chart parser for a fragment of English.
 
 It uses the active chart datastructure. The design is based
 on Steve Isard's LIB CHART, a teaching tool (written in 1983) that
-comes with the wonderful Poplog AI development environment
+comes with the wonderful Poplog AI development environment.
 
+References
+----------
 
+The original LIB CHART [1]_ and the Poplog website [2]_
 
-.. moduleauthor: Chris Brew
+.. [1] http://www.poplog.org/gospl/packages/pop11/lib/chart.p
 
-See Also
---------
-
-http://www.poplog.org/gospl/packages/pop11/lib/chart.p
-
-http://www.poplog.org
+.. [2] http://www.poplog.org
 
 Examples
 --------
@@ -38,9 +36,14 @@ S
    v suffer
 1 parses
 
-
-
 """
+
+##
+# Created 10 March 2014
+# author: Chris Brew
+# author: Stephen Isard
+# license: Apache 2.0
+##
 
 from english import GRAMMAR, Grammar
 from collections import defaultdict
@@ -240,6 +243,15 @@ class Chart(object):
 
     """An active chart parser.
 
+    Parameters
+    ----------
+    words: list of string.
+        the words to be parsed.
+    grammar: Grammar
+        the grammar to parse against.
+    verbose: boolean
+        provide more logging if true.
+
     Attributes
     ----------
 
@@ -259,10 +271,7 @@ class Chart(object):
 
     def __init__(self, words, grammar=GRAMMAR, verbose=False):
         """
-        Create and run the parser
-
-        @Type words: list of string.
-        @Param words: the words to be parsed.
+        Create and run the parser.
         """
 
         self.verbose = verbose
@@ -282,66 +291,91 @@ class Chart(object):
 
     def lexical(self, word, i):
         """
-        Create a lexical edge based on C{word}
+        Create a lexical edge based on `word`.
 
-        @Type word: string
-        @Param word: the word to base the edge on
-        @Type i: integer
-        @Param i: where the edge starts
+        Parameters
+        ----------
+        word: string
+            the word to base the edge on,
+        i: integer
+            where the edge starts
+
         """
         return Edge(word, i, i + 1, (), probability=1.0)
 
     def solutions(self, topCat):
         """
-        Find the solutions rooted in C{topCat}
+        Find the solutions rooted in `topCat`
 
-        @Type topCat: string
-        @Param topCat: the symbol that the sentence should be rooted in.
-        @Rtype: list<Edge>
+        Parameters
+        ----------
+        topCat: string
+            the symbol that the sentence should be rooted in.
+        
+        Returns
+        -------
+        solutions:list<Edge>
+        
         """
         return [e for e in self.completes[0] if
                 e.right == len(self.completes) - 1 and e.label == topCat]
 
     def add_prev(self, e, c):
         """
-        Record information about the B{COMPLETE} predecessor of an edge.
+        Record information about a **complete** predecessor of an edge.
+        
         Taken together with the edge itself, this lets the
-        B{PARTIAL} partner be reconstructed.
+        **partial** partner be reconstructed.
 
-        @Type e: Edge
-        @Param e: an edge that has just been made
-        @Type c: Edge
-        @Param c: the predecessor of e
-        @Rtype: <Edge>
-        @Return: the edge whose information has just been recorded.
+        Parameters
+        ----------
+        e: Edge
+            an edge that has just been made.
+        c: Edge
+            a predecessor of `e`, not necessarily the only one.
+
+        Returns
+        -------
+            e: Edge
+                the edge whose information has just been recorded.
+
         """
         self.prev[e].add(c)
         return e
 
     def get_prev(self, e):
         """
-        Return the predcessors of an edge
+        Return the predecessors of an edge.
 
-        @Type e: Edge
-        @Param e: the edge whose predecessors are desired
-        @Rtype: set<Edge>
-        @Return: the predecessors of e
+        Parameters
+        ----------
+        e: Edge
+            the edge whose predecessors are desired.
+        
+        Returns
+        -------
+        edges : set [Edge] 
+            the predecessors of `e`
+
         """
         return self.prev[e]
 
     def pairwithpartials(self, partials, e):
         """
         Run the fundamental rule for everything in
-        partials that goes with e.
+        `partials` that goes with `e`.
 
-        Updates the C{agenda} by adding to its end.
+        Updates the `agenda` by adding to its end.
 
         Probabilities, if present, are propagated.
 
-        :type partials: set<Edge>
-        :aram partials: the potential partners of e
-        :type e: Edge
-        :param e: The complete edge that should be completed
+        Parameters
+        ----------
+        partials: set<Edge>
+            the potential partners of `e`
+        e: Edge
+            The complete edge that should be augmented.
+
         """
         for p in partials:
             if e.label == p.needed[0]:
@@ -354,14 +388,20 @@ class Chart(object):
     def pairwithcompletes(self, e, completes):
         """
         Run the fundamental rule for everything in
-        C{completes} that goes with C{e}.
+        `completes` that goes with `e`.
 
-        Updates the C{agenda} by adding to its end.
+         Updates the `agenda` by adding to its end.
+
+        Probabilities, if present, are propagated.
+
+
+        Updates the `agenda`.
 
         :type completes: set<Edge>
         :param completes: the potential partners of e
         :type e: Edge
-        :param e: The partial edge that should be completed
+        :param e: The partial edge that should be completed.
+
         """
         for c in completes:
             if e.needed[0] == c.label:
@@ -373,16 +413,24 @@ class Chart(object):
 
     def spawn(self, lc, i):
         """
-        Spawn empty edges from the rules that match C{lc}.
+        Spawn empty edges at `i` from the rules that match `lc`.
+
         a spawned edge need only be added the first time that
         it is predicted. Its probability does not depend on how
         many times it is predicted.
 
-        :type lc: string
-        :param lc: the label of the left corner item to spawn from.
-        :type i: integer
-        :param i: the index of the cell where the empty edges are to go.
+        Updates the `agenda`.
 
+
+        Parameters
+        ----------
+        lc: string
+            the label of the left corner item to spawn from.
+        i: integer
+            the index of the cell where the empty edges are to go.
+
+        Examples
+        --------
         >>> ch = Chart([])
         >>> ch.spawn('Np', 0)
         >>> ch.agenda.get(block=False)
@@ -401,10 +449,12 @@ class Chart(object):
 
     def incorporate(self, e):
         """
-        Add C{e} to the chart and trigger all corresponding actions.
+        Add e to the chart and trigger all corresponding actions.
 
-        @Type e: Edge
-        @Param e: the edge to be added
+        Parameters
+        ----------
+        e: Edge
+         the edge to be added.
         """
         if e.iscomplete():
             if e in self.completes[e.left]:
