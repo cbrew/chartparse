@@ -49,6 +49,34 @@ from english import GRAMMAR, Grammar
 from collections import defaultdict
 from Queue import PriorityQueue
 
+def padd(p1, p2):
+    """Add probabilities.
+
+    Parameters
+    ----------
+    p1 : float or None
+        first probability.
+    p2 : float or None
+        second probability.
+    
+    Returns
+    -------
+    result : float or none
+        If both probabilities exist, their product, else None.
+
+    Examples
+    --------
+    >>> padd(None,None)
+
+    >>> padd(0.5, 0.5)
+    1.0
+    """
+
+    if p1 and p2:
+        return p1 + p2
+    else:
+        return None
+
 
 def pmul(p1, p2):
     """Multiply probabilities.
@@ -59,11 +87,18 @@ def pmul(p1, p2):
         first probability.
     p2 : float or None
         second probability.
+    
     Returns
     -------
     result : float or none
         If both probabilities exist, their product, else None.
 
+    Examples
+    --------
+    >>> pmul(None,None)
+
+    >>> pmul(0.5, 0.5)
+    0.25
     """
 
     if p1 and p2:
@@ -455,12 +490,22 @@ class Chart(object):
         ----------
         e: Edge
          the edge to be added.
+
+        Examples
+        --------
+
+
+        >>> ch = Chart(['the'])
+        >>> ch.incorporate(Edge('s',0,0,('banana',)))
+        >>> ch.incorporate(Edge('s',0,0,('banana',)))
+        >>> sorted(ch.partials[0])[-1]
+        P(s,0,0,('banana',))
         """
         if e.iscomplete():
             if e in self.completes[e.left]:
                 for prev in self.completes[e.left]:
                     if prev == e:
-                        prev.probability += e.probability
+                        prev.probability = padd(prev.probability,e.probability)
             else:
                 self.completes[e.left].add(e)
                 # TODO the empty edge produced by spawn
@@ -472,7 +517,7 @@ class Chart(object):
             if e in self.partials[e.right]:
                 for prev in self.partials[e.right]:
                     if prev == e:
-                        prev.probability += e.probability
+                        prev.probability = padd(prev.probability,e.probability)
             else:
                 self.partials[e.right].add(e)
                 self.pairwithcompletes(e, self.completes[e.right])
