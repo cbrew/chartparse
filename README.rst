@@ -19,20 +19,25 @@ to make application of the fundamental rule of chart parsing transparent.
 .. moduleauthor: Chris Brew
 
 
-Prerequisites
+Java prerequisites
+===================
 
-Java version
+** Maven
+** Java 6
 
-Maven
-Java 6
+Java build and run
+------------------
 
-Build and run:
+.. code-block
 
 cd java
 mvn package
 java -jar target/ChartParser-1.0-SNAPSHOT.jar
 
 Output: (only an extract is shown)
+---------------------------------
+
+.. code-block
 
 1:the:0-1
 2:pigeons:1-2
@@ -44,8 +49,6 @@ Output: (only an extract is shown)
 8:n:1-2
 9:v:2-3
 10:Np:0-0/[det, Nn]
-
-...
 
 Tree: 4
 
@@ -83,9 +86,9 @@ Tree: 4
         (adj green)
         (n house)))))))))
 
+Python prerequisites
+--------------------
 
-Requirements
-============
-       * Python 2.7
-       * Sphinx for the documentation
+* Python 2.7
+* Sphinx for the documentation
 	
