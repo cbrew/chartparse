@@ -1,10 +1,23 @@
 """
 This is a bottom-up chart parser for a fragment of English.
+
 It uses the active chart datastructure. The design is based
 on Steve Isard's LIB CHART, a teaching tool (written in 1983) that
 comes with the wonderful Poplog AI development environment
-(Details at http://www.poplog.org/gospl/packages/pop11/lib/chart.p
-and http://www.poplog.org)
+
+
+
+.. moduleauthor: Chris Brew
+
+See Also
+--------
+
+http://www.poplog.org/gospl/packages/pop11/lib/chart.p
+
+http://www.poplog.org
+
+Examples
+--------
 
 >>> parse(["the","pigeons",'are','punished','and','they','suffer'])
 ['the', 'pigeons', 'are', 'punished', 'and', 'they', 'suffer']
@@ -26,6 +39,7 @@ S
 1 parses
 
 
+
 """
 
 from english import GRAMMAR, Grammar
@@ -39,17 +53,16 @@ def pmul(p1, p2):
     Parameters
     ----------
     p1 : float or None
-        The first probability.
-    p2: float or None
-        The second probability,
-
+        first probability.
+    p2 : float or None
+        second probability.
     Returns
     -------
-    
-    product: float or None
-      The product of the probabilities, or None
-      when both are not available,
+    result : float or none
+        If both probabilities exist, their product, else None.
+
     """
+
     if p1 and p2:
         return p1 * p2
     else:
@@ -57,41 +70,49 @@ def pmul(p1, p2):
 
 
 class Edge(object):
-    """
-    An edge is an assertion about some span of the text. It has a left and
+    """An edge is an assertion about some span of the text. It has a left and
     right boundary, a label, and a sequence of needs. If it has no needs,
-    it is said to be B{COMPLETE}, otherwise it is described as B{PARTIAL}
+    it is said to be **complete**, otherwise it is described as **partial**.
 
-    :type label: string
-    :ivar label: the mother node of the constituent.
-    :type left: integer(0..n)
-    :ivar left: the index of the left boundary of the edge.
-    :type right: integer(0..n)
-    :ivar right: the index of the right boundary of the edge.
-    :type needed: tuple of strings
-    :ivar needed: strings representing the categories that the edge needs.
-    :type probability: float
-    :ivar probability: the inside probability of the edge.
+
+    Attributes
+    ----------
+    label : string
+        the mother node of the constituent.
+    left: integer [0..n]
+        the index of the left boundary of the edge.
+    right: integer[0..n]
+        the index of the right boundary of the edge.
+    needed: strings
+        strings representing the categories that the edge needs.
+    probability: float or None
+        the inside probability of the edge.
+
+    Parameters
+    ----------
+    label : string
+        the mother node of the constituent.
+    left: integer [0..n]
+        the index of the left boundary of the edge.
+    right: integer[0..n]
+        the index of the right boundary of the edge.
+    needed: strings
+        strings representing the categories that the edge needs.
+    probability: float or None
+        the inside probability of the edge.
+
+    Examples
+    --------
 
     >>> x = Edge('s',0,1,(), 0.5)
 
     """
     __slots__ = ('label', 'left', 'right', 'needed', 'probability')
 
-
-
     def __init__(self, label, left, right, needed, probability=None):
         """
         Constructs an edge.
 
-        :type label: string
-        :param label: the mother node of the constituent.
-        :type left: integer(0..n)
-        :param left: the index of the left boundary of the edge.
-        :type right: integer(0..n)
-        :param right: the index of the right boundary of the edge.
-        :type needed: tuple of strings
-        :param needed: strings representing the categories that the edge needs.
         """
         self.label = label
         self.left = left
@@ -101,7 +122,10 @@ class Edge(object):
 
     def iscomplete(self):
         """
-        Test if the edge is complete
+        Test if the edge is complete.
+
+        Examples
+        --------
 
         >>> x = Edge('dog',0,1,())
         >>> x.iscomplete()
@@ -114,7 +138,10 @@ class Edge(object):
 
     def ispartial(self):
         """
-        Test if the edge is partial
+        Test if the edge is partial.
+
+        Examples
+        --------
 
         >>> x = Edge('dog',0,1,())
         >>> x.ispartial()
@@ -128,11 +155,14 @@ class Edge(object):
 
     def __repr__(self):
         """
-        This method is part of Python's infrastructure for printing.
-        It produces a textual description of the Edge.
+        Produces a textual description of the Edge.
 
-        See: http://docs.python.org/\
-reference/datamodel.html#object.__repr__
+        Part of Python's infrastructure for printing.
+
+        See Also
+        --------
+    
+        http://docs.python.org/reference/datamodel.html#object.__repr__
         """
         if self.iscomplete() and isinstance(self.probability, float):
             template = 'C({label},{lhs},{rhs})@{probability:0.4f}'
@@ -153,10 +183,7 @@ reference/datamodel.html#object.__repr__
             probability=self.probability)
 
     def __lt__(self, other):
-        """
-        Rich comparison for edges.
-
-        Assumes that other really is an edge.
+        """Rich comparison for edges.
         """
         assert isinstance(other, Edge)
 
@@ -170,14 +197,16 @@ reference/datamodel.html#object.__repr__
               other.right,
               other.label,
               other.needed)
-        return t1 < t1
+        return t1 < t2
 
     def __gt__(self, other):
+        """Rich comparison for edges.
+        """
         return other < self
 
     def span_length(self):
         """
-        Return the length of a span.
+        Return the length of a span, in words.
         """
         return self.right - self.left
 
@@ -186,7 +215,10 @@ reference/datamodel.html#object.__repr__
         This method is required if we want to make Edges usable in
         Python's set and map datastructures.
 
-        @See: U{http://docs.python.org/reference/datamodel.html#object.__eq__}
+        See Also
+        --------
+        http://docs.python.org/reference/datamodel.html#object.__eq__
+
         """
         return self.label == other.label and self.left == other.left \
             and self.right == other.right and self.needed == other.needed
@@ -196,8 +228,10 @@ reference/datamodel.html#object.__repr__
         This method is needed in order to ensure that Edges in
         sets and maps are hashable and can compare unequal.
 
-        @See: U{http://docs.python.org/\
-reference/datamodel.html#object.__hash__}
+        See Also
+        --------
+        http://docs.python.org/reference/datamodel.html#object.__hash__
+
         """
         return hash((self.label, self.left, self.right, self.needed))
 
@@ -206,17 +240,21 @@ class Chart(object):
 
     """An active chart parser.
 
-    :type partials: list<set<Edge>>
-    :ivar partials: a list of sets Partial edges ending in \
-position i are stored in partials[i]
-    :type completes: list<set<Edge>>
-    :ivar completes: a list of sets Complete edges \
-starting in position i are stored in completes[i]
-    @Type prev: defaultdict<set<Edge>>
-    @Ivar prev: mapping from edges to the complete edges that \
-gave rise to them: empty for edges not created by fundamental rule
-    @Type agenda: deque<Edge>
-    @Ivar agenda: The list of edges still remaining to be incorporated.
+    Attributes
+    ----------
+
+    partials: list<set<Edge>>
+        a list of sets of partial edges ending in \
+        position i are stored in partials[i]
+    completes: list<set<Edge>>
+        a list of sets of complete edges \
+        starting in position i are stored in completes[i]
+    prev: defaultdict of set of Edge
+        mapping from edges to the complete edges that \
+        gave rise to them: empty for edges not created by fundamental rule
+    agenda: priority queue of edges
+        The list of edges still remaining to be incorporated.
+
     """
 
     def __init__(self, words, grammar=GRAMMAR, verbose=False):
@@ -327,7 +365,7 @@ gave rise to them: empty for edges not created by fundamental rule
         """
         for c in completes:
             if e.needed[0] == c.label:
-                probability = _pmul(e.probability, c.probability)
+                probability = pmul(e.probability, c.probability)
                 self.agenda.put(
                     self.add_prev(Edge(e.label, e.left,
                                        c.right, e.needed[1:],
@@ -348,7 +386,7 @@ gave rise to them: empty for edges not created by fundamental rule
         >>> ch = Chart([])
         >>> ch.spawn('Np', 0)
         >>> ch.agenda.get(block=False)
-        P(S,0,0,('Np', 'Vp'))@0.3901
+        P(Np,0,0,('Np', 'Pp'))@0.0345
         """
         for rule in self.grammar:
             lhs = rule.lhs
@@ -395,11 +433,13 @@ gave rise to them: empty for edges not created by fundamental rule
         """
         Generate the trees that are rooted in edge.
 
-        @Type e: Edge
-        @Param e: the chart entry whose daughters we trace
-        @See: U{http://www.ibm.com/developerworks/library/l-pycon.html}
-        for a good explanation of Python generators,
-        which are used here.
+        Parameters
+        ==========
+
+        e: Edge
+            the chart entry whose daughters we trace.
+
+        
         """
         prev = self.get_prev(e)
         if prev:
@@ -421,24 +461,39 @@ class Tree(object):
     """
     Container for syntax trees.
 
-    @Type parent: string
-    @Ivar parent: label of parent node
-    @Type children: tuple<Tree>
-    @Ivar children: the subtrees (possibly empty).
+    Attributes
+    ----------
+    parent: string
+        label of parent node.
+    children: tuple<Tree>
+        the subtrees (possibly empty).
     """
-
+    __slots__ = ["parent", "children", "probability"]
+    
     def __init__(self, parent, children=(), probability=None):
         self.parent = parent
         self.children = children
-    __slots__ = ["parent", "children", "probability"]
+    
 
 
 def treestring(t, tab=0):
     """
+
     Return a string representation of a syntax tree.
-     - Print preterminals on same line as their terminals
+    
+    Print preterminals on same line as their terminals
+       
        (e.g. n dog)
-     - Use indentation to signal level
+
+    Use indentation to signal nesting level.
+
+     Parameters
+    ==========
+    t: syntax tree
+        The tree to be printed.
+
+     Examples
+     ========
 
      >>> print treestring(Tree("S",[Tree("NP"),Tree("VP")]))
      S
@@ -446,9 +501,7 @@ def treestring(t, tab=0):
       VP
      <BLANKLINE>
 
-
-    @Type t: syntax tree
-    @Param t: representation of a tree to be printed
+   
     """
 
     if len(t.children) == 1 and t.children[0].children == ():
