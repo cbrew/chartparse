@@ -38,12 +38,12 @@ The original LIB CHART [1]_
 # license: Apache 2.0
 ##
 
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 import numpy.random as npr
 import numpy as np
 
 
-class Rule(namedtuple("Rule", ("lhs", "rhs", "p"))):
+class Rule(object):
 
     """One production of a context-free grammar.
 
@@ -56,10 +56,20 @@ class Rule(namedtuple("Rule", ("lhs", "rhs", "p"))):
     p: float
         The probability `P(rhs|lhs)`.
 
+    Examples
+    --------
+    >>> r = Rule('s',('np','vp'),probability=0.3)
+    >>> r.probability = 0.44
+    >>> r.probability
+    0.44
+
     """
-    def __new__(cls, lhs, rhs, probability):
-        self = super(Rule, cls).__new__(cls, lhs=lhs,rhs=rhs,p=probability)
-        return self
+    __slots__ = ("lhs", "rhs", "p")
+
+    def __init__(self, lhs, rhs, probability):
+        self.lhs = lhs
+        self.rhs = rhs
+        self.probability = probability
 
     def __repr__(self):
         return "Rule(lhs='{lhs}', rhs={rhs}, probability={probability:0.4})".format(
@@ -92,18 +102,12 @@ class Rule(namedtuple("Rule", ("lhs", "rhs", "p"))):
         value: float or None
             the new probability value
 
-        Examples
-        --------
-        >>> r = Rule('s',('np','vp'),probability=0.3)
-        >>> r.probability = 0.44
-        >>> r.probability
-        0.44
         """
         self.p = value
 
 
 
-    __slots__ = ()
+   
 
 
 sample = """S -> NP VP

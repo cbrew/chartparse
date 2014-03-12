@@ -208,6 +208,11 @@ class Edge(object):
         --------
     
         http://docs.python.org/reference/datamodel.html#object.__repr__
+
+        Examples
+        --------
+        >>> Edge('dog',0,1,(),probability=0.5)
+        C(dog,0,1)@0.5000
         """
         if self.iscomplete() and isinstance(self.probability, float):
             template = 'C({label},{lhs},{rhs})@{probability:0.4f}'
@@ -327,7 +332,7 @@ class Chart(object):
         while self.agenda:
             item = hpop(self.agenda)
             if self.verbose:
-                print item
+                print item   #pragma no cover
             self.incorporate(item)
 
     def lexical(self, word, i):
@@ -528,7 +533,7 @@ class Chart(object):
                 self.partials[e.right].add(e)
                 self.pairwithcompletes(e, self.completes[e.right])
         else:
-            raise "Huh? edge has to be either partial or complete!"
+            raise "Huh? edge has to be either partial or complete!"  #pragma no cover
 
     def trees(self, e):
         """
