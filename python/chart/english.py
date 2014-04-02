@@ -38,12 +38,12 @@ The original LIB CHART [1]_
 # license: Apache 2.0
 ##
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import numpy.random as npr
 import numpy as np
 
 
-class Rule(object):
+class Rule(namedtuple('Rule', ('lhs','rhs'))):
 
     """One production of a context-free grammar.
 
@@ -53,78 +53,25 @@ class Rule(object):
         The left hand side of the rule.
     rhs: list [string]
         The right hand side of the rule.
-    p: float
-        The probability `P(rhs|lhs)`.
+
 
     Examples
     --------
-    >>> r = Rule('s',('np','vp'),probability=0.3)
-    >>> r.probability = 0.44
-    >>> r.probability
-    0.44
-
+    >>> r = Rule('s',('np','vp'))
     """
-    __slots__ = ("lhs", "rhs", "p")
-
-    def __init__(self, lhs, rhs, probability):
-        self.lhs = lhs
-        self.rhs = rhs
-        self.probability = probability
 
     def __repr__(self):
-        return "Rule(lhs='{lhs}', rhs={rhs}, probability={probability:0.4})".format(
+        return "Rule(lhs='{lhs}', rhs={rhs})".format(
                 lhs=self.lhs,
-                rhs=self.rhs,
-                probability=self.probability)
+                rhs=self.rhs)
 
 
 
 
-    @property
-    def probability(self):
-        """Getter for probabilities.
-
-        Provided to allow parameter tying 
-        in future.
-
-        """
-        return self.p
-
-    @probability.setter
-    def probability(self,value):
-        """Setter for probabilities.
-
-        Provided to allow parameter tying 
-        in future.
-
-        Parameters
-        ==========
-        value: float or None
-            the new probability value
-
-        """
-        self.p = value
+    
 
 
 
-   
-
-
-sample = """S -> NP VP
-S -> S conj S"""
-class UniformState:
-    """
-    Analogue of RandomState that always  returns 1.0. 
-    Intent is to allow grammars with uniform distributions.
-
-    Examples
-    --------
-    >>> Grammar(sample, "and conj",state=UniformState()).grammar[0].probability
-    0.5
-
-    """
-    def rand(self):
-        return 1.0
 
 class Grammar(object):
 
@@ -137,14 +84,12 @@ class Grammar(object):
         the grammar rules, lines of the form `lhs -> rhs (|rhs)*`
     lexicon:  string
         the words, lines of the form `word category+`
-    state: state
-        generates initial probabilities.
 
     Examples
     --------
     >>> g = Grammar(RULES, WORDS)
     >>> g.grammar[0]
-    Rule(lhs='S', rhs=['Np', 'Vp'], probability=0.3901)
+    Rule(lhs='S', rhs=['Np', 'Vp'])
 
     """
 
@@ -155,68 +100,10 @@ class Grammar(object):
         """
         self.state = (npr.RandomState(42) if state is None else state)
         self.grammar = self.__rulify(grammar) + self.__lexicalize(lexicon)
-        self._probabilize()
 
-    def make_rule(self,lhs,rhs,probability):
-            return Rule(lhs=lhs, rhs=rhs, probability=probability)
+    def make_rule(self, lhs):
+            return Rule(lhs=lhs, rhs=rhs)
 
-    def _probabilize(self):
-        """
-        Rules all take the form lhs -> rhs.
-
-        Add some probabilities.
-
-        The grammar was hand-written, we therefore
-        have no reason to choose any particular
-        probabilities. Might as well assign them at
-        random, being careful to normalize at the
-        end.
-
-        Examples
-        --------
-        >>> g = Grammar(RULES, WORDS)
-        >>> g.test_state
-        0.3745401188473625
-        """
-        state = self.state
-        self.test_state = state.rand()
-        self.grammar = [self.make_rule(r.lhs,
-                                        r.rhs,
-                                        state.rand())
-                        for r in self.grammar
-                        ]
-        self._normalize()
-
-    def _normalize(self):
-        """
-        Ensure that each `P(rhs|lhs)` is
-        a normalized probability
-        distribution.
-
-        Examples
-        --------
-        >>> g = Grammar(RULES, WORDS)
-        >>> g.normalized()
-        True
-        """
-        totals_for_lhs = defaultdict(float)
-        for r in self.grammar:
-            totals_for_lhs[r.lhs] += r.probability
-        self.grammar = [Rule(lhs=r.lhs,
-                             rhs=r.rhs,
-                             probability=r.probability / totals_for_lhs[r.lhs])
-                        for r in self.grammar]
-
-    def normalized(self):
-        """
-        Test whether grammar is normalized.
-        
-        """
-        totals_for_lhs = defaultdict(float)
-        for r in self.grammar:
-            totals_for_lhs[r.lhs] += r.probability
-        totals = np.array(totals_for_lhs.values())
-        return np.allclose(totals, 1.0)
 
     def __remove_balanced_brackets(self, string):
         r = []
@@ -238,7 +125,7 @@ class Grammar(object):
             lhs, rhs = line.split('->')
             lhs = lhs.split()[0]
             elems = rhs.split('|')
-            r += [Rule(lhs=lhs, rhs=elem.split(), probability=None)
+            r += [Rule(lhs=lhs, rhs=elem.split())
                   for elem in elems]
         return r
 
@@ -253,7 +140,7 @@ class Grammar(object):
             elems = r.split('|')
             for elem in elems:
                 a = elem.split()
-                rules.append(Rule(lhs=a[0], rhs=[w], probability=None))
+                rules.append(Rule(lhs=a[0], rhs=[w]))
         return rules
 
 

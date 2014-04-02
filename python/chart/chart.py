@@ -46,75 +46,16 @@ S
 ##
 
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from heapq import heappush as hpush
 from heapq import heappop as hpop
 
-from english import GRAMMAR, Grammar
-import english
+from english import GRAMMAR
 
 
-punity = 1.0
-
-def padd(p1, p2):
-    """Add probabilities.
-
-    Parameters
-    ----------
-    p1 : float or None
-        first probability.
-    p2 : float or None
-        second probability.
-    
-    Returns
-    -------
-    result : float or none
-        If both probabilities exist, their product, else None.
-
-    Examples
-    --------
-    >>> padd(None,None)
-
-    >>> padd(0.5, 0.5)
-    1.0
-    """
-
-    if p1 and p2:
-        return p1 + p2
-    else:
-        return None
 
 
-def pmul(p1, p2):
-    """Multiply probabilities.
-
-    Parameters
-    ----------
-    p1 : float or None
-        first probability.
-    p2 : float or None
-        second probability.
-    
-    Returns
-    -------
-    result : float or none
-        If both probabilities exist, their product, else None.
-
-    Examples
-    --------
-    >>> pmul(None,None)
-
-    >>> pmul(0.5, 0.5)
-    0.25
-    """
-
-    if p1 and p2:
-        return p1 * p2
-    else:
-        return None
-
-
-class Edge(object):
+class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
     """An edge is an assertion about some span of the text. It has a left and
     right boundary, a label, and a sequence of needs. If it has no needs,
     it is said to be **complete**, otherwise it is described as **partial**.
@@ -130,8 +71,6 @@ class Edge(object):
         the index of the right boundary of the edge.
     needed: strings
         strings representing the categories that the edge needs.
-    probability: float or None
-        the inside probability of the edge.
 
     Parameters
     ----------
@@ -143,27 +82,15 @@ class Edge(object):
         the index of the right boundary of the edge.
     needed: strings
         strings representing the categories that the edge needs.
-    probability: float or None
-        the inside probability of the edge.
+    
 
     Examples
     --------
 
-    >>> x = Edge('s',0,1,(), 0.5)
-
+    >>> Edge('s',0,1,())
+    C(s, 0, 1)
+    
     """
-    __slots__ = ('label', 'left', 'right', 'needed', 'probability')
-
-    def __init__(self, label, left, right, needed, probability=None):
-        """
-        Constructs an edge.
-
-        """
-        self.label = label
-        self.left = left
-        self.right = right
-        self.needed = needed
-        self.probability = probability
 
     def iscomplete(self):
         """
@@ -211,17 +138,14 @@ class Edge(object):
 
         Examples
         --------
-        >>> Edge('dog',0,1,(),probability=0.5)
-        C(dog,0,1)@0.5000
+        >>> Edge('dog',0,1,())
+        C(dog, 0, 1)
         """
-        if self.iscomplete() and isinstance(self.probability, float):
-            template = 'C({label},{lhs},{rhs})@{probability:0.4f}'
-        elif self.iscomplete() and (self.probability is None):
-            template = 'C({label},{lhs},{rhs})'
-        elif self.ispartial and isinstance(self.probability, float):
-            template = 'P({label},{lhs},{rhs},{needed})@{probability:0.4f}'
-        elif self.ispartial and (self.probability is None):
-            template = 'P({label},{lhs},{rhs},{needed})'
+    
+        if self.iscomplete():
+            template = 'C({label}, {lhs}, {rhs})'
+        elif self.ispartial:
+            template = 'P({label}, {lhs}, {rhs},{needed})'
         else:
             raise ValueError('edge not printable')
 
@@ -229,8 +153,7 @@ class Edge(object):
             label=self.label,
             lhs=self.left,
             rhs=self.right,
-            needed=self.needed,
-            probability=self.probability)
+            needed=self.needed)
 
     def __lt__(self, other):
         """Rich comparison for edges.
@@ -252,7 +175,7 @@ class Edge(object):
     def __gt__(self, other):
         """Rich comparison for edges.
         """
-        return other < self
+        return other < self #pragma no cover
 
     def span_length(self):
         """
@@ -303,13 +226,13 @@ class Chart(object):
     ----------
 
     partials: list<set<Edge>>
-        a list of sets of partial edges ending in \
+        a list of sets of partial edges ending in 
         position i are stored in partials[i]
     completes: list<set<Edge>>
-        a list of sets of complete edges \
+        a list of sets of complete edges 
         starting in position i are stored in completes[i]
     prev: defaultdict of set of Edge
-        mapping from edges to the complete edges that \
+        mapping from edges to the complete edges that 
         gave rise to them: empty for edges not created by fundamental rule
     agenda: priority queue of edges
         The list of edges still remaining to be incorporated.
@@ -347,7 +270,7 @@ class Chart(object):
             where the edge starts
 
         """
-        return Edge(word, i, i + 1, (), probability=punity)
+        return Edge(word, i, i + 1, ())
 
     def solutions(self, topCat):
         """
@@ -425,11 +348,9 @@ class Chart(object):
         """
         for p in partials:
             if e.label == p.needed[0]:
-                probability = pmul(e.probability, p.probability)
                 hpush(self.agenda,
                     self.add_prev(Edge(p.label, p.left, e.right,
-                                       p.needed[1:],
-                                       probability=probability), e))
+                                       p.needed[1:]), e))
 
     def pairwithcompletes(self, e, completes):
         """
@@ -451,19 +372,16 @@ class Chart(object):
         """
         for c in completes:
             if e.needed[0] == c.label:
-                probability = pmul(e.probability, c.probability)
                 hpush(self.agenda,
                     self.add_prev(Edge(e.label, e.left,
-                                       c.right, e.needed[1:],
-                                       probability=probability), c))
+                                       c.right, e.needed[1:]), c))
 
     def spawn(self, lc, i):
         """
         Spawn empty edges at `i` from the rules that match `lc`.
 
         a spawned edge need only be added the first time that
-        it is predicted. Its probability does not depend on how
-        many times it is predicted.
+        it is predicted. 
 
         Updates the `agenda`.
 
@@ -480,7 +398,7 @@ class Chart(object):
         >>> ch = Chart([])
         >>> ch.spawn('Np', 0)
         >>> ch.agenda[0]
-        P(Np,0,0,('Np', 'Pp'))@0.0345
+        P(Np, 0, 0,('Np', 'Pp'))
         """
         for rule in self.grammar:
             lhs = rule.lhs
@@ -488,7 +406,6 @@ class Chart(object):
             if rhs[0] == lc:
                 e = Edge(lhs, i, i,
                          tuple(rhs),
-                         probability=rule.probability
                          )
                 if e not in self.partials[e.left]:
                     hpush(self.agenda,e)
@@ -510,13 +427,11 @@ class Chart(object):
         >>> ch.incorporate(Edge('s',0,0,('banana',)))
         >>> ch.incorporate(Edge('s',0,0,('banana',)))
         >>> sorted(ch.partials[0])[-1]
-        P(s,0,0,('banana',))
+        P(s, 0, 0,('banana',))
         """
         if e.iscomplete():
             if e in self.completes[e.left]:
-                for prev in self.completes[e.left]:
-                    if prev == e:
-                        prev.probability = padd(prev.probability,e.probability)
+                pass
             else:
                 self.completes[e.left].add(e)
                 # TODO the empty edge produced by spawn
@@ -526,9 +441,7 @@ class Chart(object):
                 self.pairwithpartials(self.partials[e.left], e)
         elif e.ispartial():
             if e in self.partials[e.right]:
-                for prev in self.partials[e.right]:
-                    if prev == e:
-                        prev.probability = padd(prev.probability,e.probability)
+                pass
             else:
                 self.partials[e.right].add(e)
                 self.pairwithcompletes(e, self.completes[e.right])
@@ -556,10 +469,9 @@ class Chart(object):
                         for left in self.trees(p):
                             for right in self.trees(c):
                                 yield Tree(e.label,
-                                           left.children + tuple([right]),
-                                           probability=e.probability)
+                                           left.children + tuple([right]))
         else:
-            yield Tree(e.label, probability=e.probability)
+            yield Tree(e.label)
 
 
 class Tree(object):
@@ -574,9 +486,9 @@ class Tree(object):
     children: tuple<Tree>
         the subtrees (possibly empty).
     """
-    __slots__ = ["parent", "children", "probability"]
+    ["parent", "children"]
     
-    def __init__(self, parent, children=(), probability=None):
+    def __init__(self, parent, children=()):
         self.parent = parent
         self.children = children
     
@@ -664,48 +576,3 @@ def parse(sentence, verbose=False):
     print i, "parses"
 
 
-def aas_grammar():
-    """
-
-    Examples
-    --------
-
-    >>> aas_grammar()
-    S
-     S
-      S
-       A a
-      S
-       A a
-     S
-      A a
-    <BLANKLINE>
-    S
-     S
-      A a
-     S
-      S
-       A a
-      S
-       A a
-    <BLANKLINE>
-
-    """
-
-    v = Chart(["a", "a", "a"], grammar=Grammar(
-            """S -> S S
-    S -> A""", "a A",state=english.UniformState()))
-
-    x = v.solutions('S')
-    for t in v.trees(x[0]):
-        print treestring(t)
-        # print t.probability
-    """
-    i = 0
-    for e in v.solutions('S'):
-        for tree in v.trees(e):
-            i += 1
-            print "Parse %d:" % i
-            print treestring(tree),
-    print i, "parses"
-    """
