@@ -500,7 +500,7 @@ class Tree(object):
     
 
 
-def treestring(t, tab=0):
+def treestring(t, tab=0,sep=' '):
     """
 
     Return a string representation of a syntax tree.
@@ -525,19 +525,26 @@ def treestring(t, tab=0):
       VP
      <BLANKLINE>
 
+
+    >>> print treestring(Tree("S",[Tree("NP"),Tree("VP")]),sep='_')
+    S
+    _NP
+    _VP
+    <BLANKLINE>
+
    
     """
 
     if len(t.children) == 1 and t.children[0].children == ():
-        s = (' ' * tab) + t.parent + ' ' + t.children[0].parent + '\n'
+        s = (sep * tab) + t.parent + ' ' + t.children[0].parent + '\n'
     else:
-        s = (' ' * tab) + t.parent + '\n'
+        s = (sep * tab) + t.parent + '\n'
         for child in t.children:
-            s += treestring(child, tab + 1)
+            s += treestring(child, tab=tab + 1,sep=sep)
     return s
 
 
-def parse(sentence, verbose=False):
+def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' '):
     """
     Print out the parses of a sentence
 
@@ -571,14 +578,14 @@ def parse(sentence, verbose=False):
     1 parses
 
     """
-    v = Chart(sentence, verbose=verbose)
+    v = Chart(sentence, verbose=verbose,grammar=grammar)
     print sentence
     i = 0
-    for e in v.solutions('S'):
+    for e in v.solutions(topcat):
         for tree in v.trees(e):
             i += 1
             print "Parse %d:" % i
-            print treestring(tree),
+            print treestring(tree, tab=0, sep=sep),
     print i, "parses"
 
 

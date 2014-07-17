@@ -29,6 +29,53 @@ The original LIB CHART [1]_
 
 .. [1] http://www.poplog.org/gospl/packages/pop11/lib/chart.p
 
+>>> import chart
+>>> chart.parse(["the","director",'is','clint', 'eastwood'])
+['the', 'director', 'is', 'clint', 'eastwood']
+Parse 1:
+S
+ Np
+  det the
+  Nn
+   n director
+ Vp
+  cop is
+  Pn
+   n clint
+   Pn
+    n eastwood
+1 parses
+
+>>> import chart
+>>> chart.parse(["show", "me","a","movie","where", "the","director",'is','clint', 'eastwood'],topcat='SImp',sep='_')
+['show', 'me', 'a', 'movie', 'where', 'the', 'director', 'is', 'clint', 'eastwood']
+Parse 1:
+SImp
+_v show
+_Np
+__pn me
+_Np
+__Np
+___det a
+___Nn
+____n movie
+__Relp
+___rp where
+___S
+____Np
+_____det the
+_____Nn
+______n director
+____Vp
+_____cop is
+_____Pn
+______n clint
+______Pn
+_______n eastwood
+1 parses
+
+
+
 """
 
 ##
@@ -38,9 +85,8 @@ The original LIB CHART [1]_
 # license: Apache 2.0
 ##
 
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 import numpy.random as npr
-import numpy as np
 
 
 class Rule(namedtuple('Rule', ('lhs','rhs'))):
@@ -147,14 +193,16 @@ class Grammar(object):
 RULES = """S (num) -> Np(num case:subj) Vp(num) | S conj S
 S (num) -> Np(num case:subj) cop(num) ppart
 S(num) -> Np(num case:subj) cop(num) ppart passmarker Np(case:obj)
-Np (num case) -> det(num) Nn(num) | Np Pp | pn(num case)
-Np -> Np conj Np
+SImp -> v Np Np
+Relp -> rp S
+Np (num case) -> det(num) Nn(num) | Np Pp | pn(num case) | Np Relp | Np conj Np
 Nn(num) -> n(num) | adj n(num)
-Vp(num)  -> v(num tr:trans) Np(case:obj) | v(num tr:intrans) | cop(num) adj
+Vp(num)  -> v(num tr:trans) Np(case:obj) | v(num tr:intrans) | cop(num) adj | cop(num) Pn
 Vp(num) -> Vp(num) Pp
+Pn -> n | n Pn
 Pp -> prep Np(case:obj)"""
 
-WORDS = """det a(num:sing)
+WORDS = """a det(num:sing)
 and conj
 are cop(num:pl)
 ball n (num : sing)
@@ -168,8 +216,12 @@ cage n(num:sing) | v(num:pl tr:trans)
 caged v(tr:trans) | ppart
 cages n(num:pl) | v(num:sing tr:trans)
 chris n(num:sing)
+clint n(num:sing)
 computer n(num:sing)
 computers n(num:pl)
+director n(num:sing)
+directors n(num:pl)
+eastwood n(num:sing)
 enormous adj
 fifty det(num:pl)
 four det(num:pl)
@@ -185,9 +237,12 @@ house n(num:sing)
 in prep
 is cop(num:sing)
 little adj
+me pn(num:sing)
 mic pn(num:sing)
 micro n(num:sing)
 micros n(num:pl)
+movie n(num:sing)
+movies n(num:pl)
 on prep
 one n(num:sing) | pn(num:sing) | det(num:sing)
 ones n(num:pl)
@@ -214,6 +269,7 @@ run v(tr:intrans num:pl)
 runs v(tr:intrans num:sing)
 scientists n(num:pl)
 she pn(num:sing case:subj)
+show v(tr:ditrans)
 steve pn(num:sing)
 stuart pn(num:sing)
 suffer v(num:pl tr:intrans)
@@ -231,7 +287,8 @@ undergraduates n(num:pl)
 universities n(num:pl)
 university n(num:sing)
 was cop(num:sing)
-were cop(num:pl)"""
+were cop(num:pl)
+where rp(rptype:loc)"""
 
 
 GRAMMAR = Grammar(RULES, WORDS)

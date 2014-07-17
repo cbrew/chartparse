@@ -25,9 +25,10 @@ multiple items spanning the same set of words but giving them different labels, 
 for the span 0:1
 
 The parser then uses grammar rules to combine items and generate longer items such as ``Item("Np",5,7)``.
-Two items can be combined if the left hand item ends in the same place that the right hand item starts.
-If, at the end of the process, an item has been built that spans the string from beginning to end and has 
-a suitable label, the input has been fully analyzed.
+Two items can be combined if the left hand item ends in the same place that the right hand item starts, and
+the grammar licenses the combination. If, at the end of the process, an item has been built that spans the string from 
+beginning to end and has a suitable label (e.g. sentence, imperative, question, whatever ...), the input 
+has been fully analyzed.
 
 Depending on the details of the implementation, there may also be items that represent partial constituents
 such as ``Edge("SImp",0,2,["Np"])``. This one says that if material to the right of the span 0:2 can be made 
@@ -99,8 +100,18 @@ For convenience, the arcs can be renumbered with consecutive integers:
 Once this is done, the chart can be seeded in the same way as before, except that the numbers now represent 
 states of the finite-state machine, rather than string positions.
 
-The process that builds combinations from the initial seeds can now be left unchanged.
+The process that builds combinations from the initial seeds can now be left unchanged. Items can combine if the
+start state of one is the end state of the other, and the grammar licenses that combination. Because of the renumbering, words
+that are on incompatible paths pass through different intermediate states, therefore never have the opportunity to
+combine.
 
 The termination condition, also changes slightly: we now say that an analysis is complete if an item is built whose start point
 is a start state of the finite-state machine and whose end point is an accepting state of the machine.
 """
+
+import chart
+
+
+
+
+
