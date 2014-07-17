@@ -185,7 +185,7 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
 
     def __eq__(self, other):
         """
-        This method is required if we want to make Edges usable in
+        This method is required because we want to make Edges usable in
         Python's set and map datastructures.
 
         See Also
@@ -349,7 +349,7 @@ class Chart(object):
         for p in partials:
             if e.label == p.needed[0]:
                 hpush(self.agenda,
-                    self.add_prev(Edge(p.label, p.left, e.right,
+                       self.add_prev(Edge(p.label, p.left, e.right,
                                        p.needed[1:]), e))
 
     def pairwithcompletes(self, e, completes):
@@ -422,12 +422,18 @@ class Chart(object):
         Examples
         --------
 
-
         >>> ch = Chart(['the'])
         >>> ch.incorporate(Edge('s',0,0,('banana',)))
         >>> ch.incorporate(Edge('s',0,0,('banana',)))
-        >>> sorted(ch.partials[0])[-1]
-        P(s, 0, 0,('banana',))
+        >>> sorted(ch.partials[0])[-1:]
+        [P(s, 0, 0,('banana',))]
+
+        >>> ch = Chart([])
+        >>> ch.incorporate(Edge('np',0,1,()))
+        >>> ch.incorporate(Edge('np',0,1,()))
+        >>> ch.completes[0]
+        set([C(np, 0, 1)])
+
         """
         if e.iscomplete():
             if e in self.completes[e.left]:
