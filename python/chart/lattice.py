@@ -109,7 +109,72 @@ The termination condition, also changes slightly: we now say that an analysis is
 is a start state of the finite-state machine and whose end point is an accepting state of the machine.
 """
 
-import chart
+def arcify(s):
+	i,w,j = s.split()
+	return int(i),w,int(j)
+
+##
+# a set of arcs designed to show the lattice capability
+##
+
+demo_arcs = map(arcify,"""0 show 1
+1 me   2
+2 a    3
+3 movie 4
+4 where 5
+5 the 6
+6 director 8
+6 direct 7
+7 or 8
+8 is 9
+9 clint 10
+10 eastwood 12
+10 east 11
+11 would 12""".split('\n'))
+
+class DemoLatticeWords(object):
+	
+
+	"""
+	Run a chart from a lattice rather than a linear set of words.
+
+	>>> import chart
+	>>> chart.parse(["show", "me","a","movie","where", "the","director",'is','clint', 'eastwood'],topcat='SImp', sep='_', input_source=DemoLatticeWords)
+	['show', 'me', 'a', 'movie', 'where', 'the', 'director', 'is', 'clint', 'eastwood']
+	Parse 1:
+	SImp
+	_v show
+	_Np
+	__pn me
+	_Np
+	__Np
+	___det a
+	___Nn
+	____n movie
+	__Relp
+	___rp where
+	___S
+	____Np
+	_____det the
+	_____Nn
+	______n director
+	____Vp
+	_____cop is
+	_____Pn
+	______n clint
+	______Pn
+	_______n eastwood
+	1 parses
+	"""
+	def __init__(self,words):
+		pass
+
+
+	@property
+	def final_state(self):
+		return demo_arcs[-1][-1]
+	def arcs(self):
+		return demo_arcs
 
 
 

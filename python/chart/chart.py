@@ -5,6 +5,8 @@ It uses the active chart datastructure. The design is based
 on Steve Isard's LIB CHART, a teaching tool (written in 1983) that
 comes with the wonderful Poplog AI development environment.
 
+This has been adjusted to work with a lattice of input possibilities.
+
 References
 ----------
 
@@ -52,7 +54,29 @@ from heapq import heappop as hpop
 
 from english import GRAMMAR
 
+class LinearWords(object):
+    """
+    A class that implements the finite state machine abstraction 
+    for the easy case of a linear sequence of words.
 
+    This is the protocol that the any finite state machine must
+    implement for input. It must have a final state, with a number ``n``,
+    and previous states from 0 to n-1.
+
+    """
+    def __init__(self, words):
+        self.words = words
+
+    @property
+    def final_state(self):
+        return len(self.words)
+
+    def arcs(self):
+        """
+        Enumerate the arcs of simple linear finite-state machine.
+        """
+        for i,w in enumerate(self.words):
+            yield i,w , i+1
 
 
 class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
@@ -209,6 +233,8 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
         return hash((self.label, self.left, self.right, self.needed))
 
 
+
+
 class Chart(object):
 
     """An active chart parser.
@@ -239,26 +265,47 @@ class Chart(object):
 
     """
 
-    def __init__(self, words, grammar=GRAMMAR, verbose=False):
+    def __init__(self, words, grammar=GRAMMAR, verbose=False, input_source=LinearWords):
         """
         Create and run the parser.
         """
 
+        self.input_source = input_source
         self.verbose = verbose
         self.grammar = grammar.grammar
-        self.partials = [set() for _ in range(len(words) + 1)]
-        self.completes = [set() for _ in range(len(words) + 1)]
         self.prev = defaultdict(set)
         self.agenda = []
-        for i in range(len(words)):
-            hpush(self.agenda,self.lexical(words[i], i))
+        self.seed_agenda(words)
         while self.agenda:
             item = hpop(self.agenda)
             if self.verbose:
                 print item   #pragma no cover
             self.incorporate(item)
 
-    def lexical(self, word, i):
+    def setup_words(self, words):
+        """
+        Instantiate the source of words.
+        """
+        return self.input_source(words)
+    
+    def seed_agenda(self, words):
+        """
+        Go through the words, seeding the agenda.
+
+        XXX For generality, we want an interface where the
+        object that introduces the words is a finite-state
+        machine whose arcs can be enumerated.
+        """
+        words = self.setup_words(words)
+        final_state = words.final_state
+
+        self.partials = [set() for _ in range(final_state + 1)]
+        self.completes = [set() for _ in range(final_state + 1)]
+
+        for i,w,j in words.arcs():
+             hpush(self.agenda,self.lexical(i,w,j))
+
+    def lexical(self, i, word, j):
         """
         Create a lexical edge based on `word`.
 
@@ -268,9 +315,11 @@ class Chart(object):
             the word to base the edge on,
         i: integer
             where the edge starts
+        j: integer
+            where the edge ends
 
         """
-        return Edge(word, i, i + 1, ())
+        return Edge(word, i, j, ())
 
     def solutions(self, topCat):
         """
@@ -480,6 +529,10 @@ class Chart(object):
             yield Tree(e.label)
 
 
+
+
+
+
 class Tree(object):
 
     """
@@ -544,7 +597,7 @@ def treestring(t, tab=0,sep=' '):
     return s
 
 
-def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' '):
+def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_source=LinearWords):
     """
     Print out the parses of a sentence
 
@@ -577,15 +630,23 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' '):
        v suffer
     1 parses
 
+     >>> parse(["the","pigeons",'are','punished','and','they','blink'])
+     ['the', 'pigeons', 'are', 'punished', 'and', 'they', 'blink']
+     No parse
+
     """
-    v = Chart(sentence, verbose=verbose,grammar=grammar)
+    v = Chart(sentence, verbose=verbose,grammar=grammar,input_source=input_source)
     print sentence
     i = 0
-    for e in v.solutions(topcat):
-        for tree in v.trees(e):
-            i += 1
-            print "Parse %d:" % i
-            print treestring(tree, tab=0, sep=sep),
-    print i, "parses"
+    sols = v.solutions(topcat)
+    if len(sols) == 0:
+        print "No parse"
+    else:
+        for e in sols:
+            for tree in v.trees(e):
+                i += 1
+                print "Parse %d:" % i
+                print treestring(tree, tab=0, sep=sep),
+        print i, "parses"
 
 

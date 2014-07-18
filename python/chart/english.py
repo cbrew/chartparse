@@ -288,7 +288,14 @@ universities n(num:pl)
 university n(num:sing)
 was cop(num:sing)
 were cop(num:pl)
-where rp(rptype:loc)"""
+where rp(rptype:loc)
+direct v(tr:trans)
+wood n
+would md
+dye v(tr:trans)
+or  conj
+rector  n(num:sing)
+east adj"""
 
 
 GRAMMAR = Grammar(RULES, WORDS)
