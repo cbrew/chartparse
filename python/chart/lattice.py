@@ -55,47 +55,51 @@ This uncertainty can be represented by a finite-state machine, as follows:
 
 Arcs:
 
-0 show 1
-1 me   2
-2 a    3
-3 movie 4
-4 where 5
-5 the 6
-6 director 7
-6 direct  6.1
-6 dye     6.2
-6.1 or    7
-6.2 rector  7
-7 is 8
-8 clint 9
-9 eastwood 10
-9 is 9.1
-9 east 9.1
-9 is 9.2
-9.1 wood 10
-9.2 would 10
+::
+
+	0 show 1
+	1 me   2
+	2 a    3
+	3 movie 4
+	4 where 5
+	5 the 6
+	6 director 7
+	6 direct  6.1
+	6 dye     6.2
+	6.1 or    7
+	6.2 rector  7
+	7 is 8
+	8 clint 9
+	9 eastwood 10
+	9 is 9.1
+	9 east 9.1
+	9 is 9.2
+	9.1 wood 10
+	9.2 would 10
 
 For convenience, the arcs can be renumbered with consecutive integers:
 
-0 show 1
-1 me   2
-2 a    3
-3 movie 4
-4 where 5
-5 the 6
-6 director 9
-6 direct  7
-6 dye     8
-7 or    9
-8 rector  9
-9 is 10
-10 clint 11
-11 eastwood 14
-11 is 12
-11 east 12
-11 is 13
-12 wood 14
-13 would 14
+::
+
+	0 show 1
+	1 me   2
+	2 a    3
+	3 movie 4
+	4 where 5
+	5 the 6
+	6 director 9
+	6 direct  7
+	6 dye     8
+	7 or    9
+	8 rector  9
+	9 is 10
+	10 clint 11
+	11 eastwood 14
+	11 is 12
+	11 east 12
+	11 is 13
+	12 wood 14
+	13 would 14
 
 Once this is done, the chart can be seeded in the same way as before, except that the numbers now represent 
 states of the finite-state machine, rather than string positions.
