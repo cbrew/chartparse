@@ -7,3 +7,7 @@
 /trunk/.project
 /trunk/.classpath
 /trunk/.settings
+**/.history
+**/*.pyc
+**/_build
+**/.coverage
