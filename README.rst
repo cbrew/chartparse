@@ -13,6 +13,10 @@ edges starting at position <code>i</code> of the input string are stored in
 stores all the edges that **end**  at `i`. This layout is designed
 to make application of the fundamental rule of chart parsing transparent.
 
+Some additions have been made to the grammar to allow commands to an imaginary movie system, and
+input as if from a lattice.
+
+
 There are versions in Java (not currently actively developed), and Python.
 See the README files in those directories for details.
 
