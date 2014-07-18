@@ -21,7 +21,13 @@ The English grammar
 	
 .. automodule:: english
 	:members:
- 
+
+
+Lattice input
+============= 
+
+.. automodule:: lattice
+	:members:
 
 
 Indices and tables
