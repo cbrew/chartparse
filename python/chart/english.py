@@ -51,27 +51,28 @@ S
 ['show', 'me', 'a', 'movie', 'where', 'the', 'director', 'is', 'clint', 'eastwood']
 Parse 1:
 SImp
-_v show
-_Np
-__pn me
-_Np
+_Vp
+__v show
 __Np
-___det a
-___Nn
-____n movie
-__Relp
-___rp where
-___S
-____Np
-_____det the
-_____Nn
-______n director
-____Vp
-_____cop is
-_____Pn
-______n clint
+___pn me
+__Np
+___Np
+____det a
+____Nn
+_____n movie
+___Relp
+____rp where
+____S
+_____Np
+______det the
+______Nn
+_______n director
+_____Vp
+______cop is
 ______Pn
-_______n eastwood
+_______n clint
+_______Pn
+________n eastwood
 1 parses
 
 
@@ -190,14 +191,14 @@ class Grammar(object):
         return rules
 
 
-RULES = """S (num) -> Np(num case:subj) Vp(num) | S conj S
-S (num) -> Np(num case:subj) cop(num) ppart
-S(num) -> Np(num case:subj) cop(num) ppart passmarker Np(case:obj)
-SImp -> v Np Np
+RULES = """S(num) -> Np(num,case:subj) Vp(num) | S conj S
+S(num) -> Np(num,case:subj) cop(num) ppart
+S(num) -> Np(num,case:subj) cop(num) ppart passmarker Np(case:obj)
+SImp -> Vp 
 Relp -> rp S
-Np (num case) -> det(num) Nn(num) | Np Pp | pn(num case) | Np Relp | Np conj Np
+Np(num,case) -> det(num) Nn(num) | Np Pp | pn(num,case) | Np Relp | Np conj Np
 Nn(num) -> n(num) | adj n(num)
-Vp(num)  -> v(num tr:trans) Np(case:obj) | v(num tr:intrans) | cop(num) adj | cop(num) Pn
+Vp(num)  -> v(num,tr:trans) Np(case:obj) | v(num,tr:intrans) | cop(num) adj | cop(num) Pn | v(num) Np Np
 Vp(num) -> Vp(num) Pp
 Pn -> n | n Pn
 Pp -> prep Np(case:obj)"""
@@ -269,6 +270,7 @@ run v(tr:intrans num:pl)
 runs v(tr:intrans num:sing)
 scientists n(num:pl)
 she pn(num:sing case:subj)
+sheep n
 show v(tr:ditrans)
 steve pn(num:sing)
 stuart pn(num:sing)

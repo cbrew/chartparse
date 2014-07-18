@@ -121,20 +121,25 @@ def arcify(s):
 # a set of arcs designed to show the lattice capability
 ##
 
-demo_arcs = map(arcify,"""0 show 1
-1 me   2
-2 a    3
-3 movie 4
-4 where 5
-5 the 6
-6 director 8
-6 direct 7
-7 or 8
-8 is 9
-9 clint 10
-10 eastwood 12
-10 east 11
-11 would 12""".split('\n'))
+demo_arcs = map(arcify,"""	0 show 1
+	1 me   2
+	2 a    3
+	3 movie 4
+	4 where 5
+	5 the 6
+	6 director 9
+	6 direct  7
+	6 dye     8
+	7 or    9
+	8 rector  9
+	9 is 10
+	10 clint 11
+	11 eastwood 14
+	11 is 12
+	11 east 12
+	11 is 13
+	12 wood 14
+	13 would 14""".split('\n'))
 
 class DemoLatticeWords(object):
 	
@@ -147,27 +152,28 @@ class DemoLatticeWords(object):
 	['show', 'me', 'a', 'movie', 'where', 'the', 'director', 'is', 'clint', 'eastwood']
 	Parse 1:
 	SImp
-	_v show
-	_Np
-	__pn me
-	_Np
+	_Vp
+	__v show
 	__Np
-	___det a
-	___Nn
-	____n movie
-	__Relp
-	___rp where
-	___S
-	____Np
-	_____det the
-	_____Nn
-	______n director
-	____Vp
-	_____cop is
-	_____Pn
-	______n clint
+	___pn me
+	__Np
+	___Np
+	____det a
+	____Nn
+	_____n movie
+	___Relp
+	____rp where
+	____S
+	_____Np
+	______det the
+	______Nn
+	_______n director
+	_____Vp
+	______cop is
 	______Pn
-	_______n eastwood
+	_______n clint
+	_______Pn
+	________n eastwood
 	1 parses
 	"""
 	def __init__(self,words):
