@@ -104,8 +104,12 @@ feature specifications of two types:
 import chart
 from collections import namedtuple
 import re
+import english
 
 COMPLEX_CATEGORY=re.compile(r"(\w*)\s*\(([^)]+)\)")
+
+def restring(x):
+		return "\n".join(map(str,x))
 
 class Category(namedtuple("Category",("cat","features"))):
 	@staticmethod
@@ -134,14 +138,20 @@ class Category(namedtuple("Category",("cat","features"))):
 		"""
 		The constraints on the category.
 		"""
-		return frozenset({f for f in self.features if self.features[f] is None})
+		return frozenset({f for f in self.features 
+				if self.features[f] is None})
 	
 	@property
 	def atomic_features(self):
 		"""
 		The atomic features on the category.
+		
+		>>> c = Category.from_string('Np(case:subj,num)')
+		>>> c.atomic_features
+		{'case': 'subj'}
 		"""
-		return {f:v for f,v in self.features.items() if self.features[f] is not None}
+		return {f:v for f,v in self.features.items() 
+				if self.features[f] is not None}
 
 
 
@@ -167,6 +177,9 @@ class FeatureizedRule(namedtuple('FeatureizedRule',('lhs','rhs'))):
 		right = tuple([Category.from_string(r) for r in rhs])
 		return super(FeatureizedRule, cls).__new__(cls, lhs=left, rhs=right)
 
+	def __repr__(self):
+		return "{lhs} -> {rhs}".format(lhs=self.lhs.cat,
+			rhs=" ".join([r.cat for r in self.rhs]))
 	@property
 	def constraints(self):
 		return frozenset(self.lhs.constraints.union(*[r.constraints for r in self.rhs]))
@@ -178,14 +191,47 @@ class FeatureizedRule(namedtuple('FeatureizedRule',('lhs','rhs'))):
 		"""
 		return [FeatureizedRule(x,y) for x,y in string_pairs]
 
+
+
 	@staticmethod
-	def string_pairs_from_spec(spec):
+	def string_pairs_from_rules(spec):
+		"""
+		Create a set of string pairs from rules.
+
+		>>> sp = FeatureizedRule.string_pairs_from_rules(english.RULES)
+		>>> print restring(FeatureizedRule.grammar_from_string_pairs(sp))
+		S -> Np Vp
+		S -> S conj S
+		S -> Np cop ppart
+		S -> Np cop ppart passmarker Np
+		SImp -> Vp
+		Relp -> rp S
+		Np -> det Nn
+		Np -> Np Pp
+		Np -> pn
+		Np -> Np Relp
+		Np -> Np conj Np
+		Nn -> n
+		Nn -> adj n
+		Vp -> v Np
+		Vp -> v
+		Vp -> cop adj
+		Vp -> cop Pn
+		Vp -> v Np Np
+		Vp -> Vp Pp
+		Pn -> n
+		Pn -> n Pn
+		Pp -> prep Np
+		"""
 		lines = spec.split('\n')
 		for line in lines:
 			lhs,rhses = line.split('->')
 			lhs = lhs.strip()
 			for rhs in rhses.split('|'):
 				yield lhs,rhs.split()
+
+
+
 
 
 
