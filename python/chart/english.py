@@ -196,7 +196,7 @@ S(num) -> Np(num,case:subj) cop(num) ppart
 S(num) -> Np(num,case:subj) cop(num) ppart passmarker Np(case:obj)
 SImp -> Vp 
 Relp -> rp S
-Np(num,case) -> det(num) Nn(num) | Np Pp | pn(num,case) | Np Relp | Np conj Np
+Np(num,case) -> det(num) Nn(num) | Np(num,case) Pp | pn(num,case) | Np(num,case) Relp | Np(case) conj Np(case)
 Nn(num) -> n(num) | adj n(num)
 Vp(num)  -> v(num,tr:trans) Np(case:obj) | v(num,tr:intrans) | cop(num) adj | cop(num) Pn | v(num) Np Np
 Vp(num) -> Vp(num) Pp
@@ -206,16 +206,16 @@ Pp -> prep Np(case:obj)"""
 WORDS = """a det(num:sing)
 and conj
 are cop(num:pl)
-ball n (num : sing)
+ball n(num:sing)
 big adj
 bitten ppart
 blue adj
 boy n(num:sing)
 boys n(num:pl)
 by passmarker | prep
-cage n(num:sing) | v(num:pl tr:trans)
+cage n(num:sing) | v(num:pl,tr:trans)
 caged v(tr:trans) | ppart
-cages n(num:pl) | v(num:sing tr:trans)
+cages n(num:pl) | v(num:sing,tr:trans)
 chris n(num:sing)
 clint n(num:sing)
 computer n(num:sing)
@@ -229,11 +229,11 @@ four det(num:pl)
 girl n(num:sing)
 girls n(num:pl)
 green adj
-he pn(num:sing case:subj)
-her pn(num:sing case:obj)
-him pn(num:sing case:obj)
+he pn(num:sing,case:subj)
+her pn(num:sing,case:obj)
+him pn(num:sing,case:obj)
 hit v(tr:trans) | ppart
-hits v(tr:trans num:sing)
+hits v(tr:trans,num:sing)
 house n(num:sing)
 in prep
 is cop(num:sing)
@@ -251,38 +251,38 @@ pdp11 n(num:sing)
 pdp11s n(num:pl)
 pigeon n(num:sing)
 pigeons n(num:pl)
-program n(num:sing) | v(num:pl tr:trans)
-programmed v( tr:trans) | ppart
-programs n(num:pl) | v(num:sing tr:trans)
-punish v(num:pl tr:trans)
-punished v( tr:trans) | ppart
-punishes v(num:sing tr:trans)
+program n(num:sing) | v(num:pl,tr:trans)
+programmed v(tr:trans) | ppart
+programs n(num:pl) | v(num:sing,tr:trans)
+punish v(num:pl,tr:trans)
+punished v(tr:trans)|ppart
+punishes v(num:sing,tr:trans)
 ran v(tr:intrans)
 rat n(num:sing)
 rats n(num:pl)
 red adj
-reinforce v (num:pl tr:trans)
-reinforced v ( tr:trans) | ppart
-reinforces v (num:s tr:trans)
+reinforce v(num:pl,tr:trans)
+reinforced v(tr:trans) | ppart
+reinforces v(num:s,tr:trans)
 room n(num:sing)
 rooms n(num:pl)
-run v(tr:intrans num:pl)
-runs v(tr:intrans num:sing)
+run v(tr:intrans,num:pl)
+runs v(tr:intrans,num:sing)
 scientists n(num:pl)
-she pn(num:sing case:subj)
+she pn(num:sing,case:subj)
 sheep n
 show v(tr:ditrans)
 steve pn(num:sing)
 stuart pn(num:sing)
-suffer v(num:pl tr:intrans)
-suffered v( tr:intrans)
-suffers v(num:sing tr:intrans)
+suffer v(num:pl,tr:intrans)
+suffered v(tr:intrans)
+suffers v(num:sing,tr:intrans)
 that det(num:sing)
 the det
-them pn(num:pl case:obj)
+them pn(num:pl,case:obj)
 these det(num:pl)
-they pn(num:pl case:subj)
-those det (num:pl)
+they pn(num:pl,case:subj)
+those det(num:pl)
 three det(num:pl)
 two det(num:pl)
 undergraduates n(num:pl)
@@ -290,9 +290,10 @@ universities n(num:pl)
 university n(num:sing)
 was cop(num:sing)
 were cop(num:pl)
+when rp(rptype:tmp)
 where rp(rptype:loc)
 direct v(tr:trans)
-wood n
+wood n(num:sing)
 would md
 dye v(tr:trans)
 or  conj
