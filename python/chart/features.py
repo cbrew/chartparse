@@ -40,19 +40,6 @@ feature specifications of two types:
 		that carry the feature. Also, alternate right-hand sides are expanded into simple rules with
 		a single right-hand side.
 
-		The rule
-
-		Vp(num)  -> v(num,tr:trans) Np(case:obj) | v(num,tr:intrans) | cop(num) adj | cop(num) Pn | v(num,tr:ditrans) Np(case:obj) Np(case:obj)
-
-		translates into the normalized rules:
-
-		Vp  -> v(tr:trans)  Np(case:obj)     {num:{0,1}}
-		Vp  -> v(tr:intrans)
-		Vp  -> cop adj {num:{0,1}}
-		Vp  -> cop Pn {num:{0,1}}
-		Vp  -> v(tr:ditrans) Np(case:obj) Np(case:obj) {num:{0,1}}
-
-
 
 		>>> chart.parse(['the','sheep','suffers'],sep='_')
 		['the', 'sheep', 'suffers']
