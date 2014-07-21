@@ -112,6 +112,18 @@ def restring(x):
 		return "\n".join(map(str,x))
 
 class Category(namedtuple("Category",("cat","features"))):
+
+	def __repr__(self):
+		"""
+		>>> c = Category.from_string('Np(case:subj,num)')
+		>>> print c
+		Np(case:subj,num)
+		"""
+		if len(self.features) == 0:
+			return "{cat}".format(cat=self.cat)
+		else:
+			return "{cat}({fs})".format(cat=self.cat,fs=self.fspec)
+
 	@staticmethod
 	def from_string(xx):
 		if '(' in xx:
@@ -140,6 +152,7 @@ class Category(namedtuple("Category",("cat","features"))):
 		"""
 		return frozenset({f for f in self.features 
 				if self.features[f] is None})
+
 	
 	@property
 	def atomic_features(self):
@@ -152,12 +165,17 @@ class Category(namedtuple("Category",("cat","features"))):
 		"""
 		return {f:v for f,v in self.features.items() 
 				if self.features[f] is not None}
-
+	@property
+	def fspec(self):
+		return ",".join(sorted([("{f}" if v is None else "{f}:{v}").format(f=f,v=v) for f,v in self.features.items()]))
+		
 
 
 
 class FeatureizedRule(namedtuple('FeatureizedRule',('lhs','rhs'))):
 	"""One production of a context-free grammar.
+
+
 	Attributes
 	----------
 	lhs: Category
