@@ -41,7 +41,7 @@ feature specifications of two types:
 		a single right-hand side.
 
 
-		>>> chart.parse(['the','sheep','suffers'],sep='_')
+		>>> chart.parse(['the','sheep','suffers'],sep='_', use_features=False)
 		['the', 'sheep', 'suffers']
 		Parse 1:
 		S
@@ -53,7 +53,7 @@ feature specifications of two types:
 		__v suffers
 		1 parses
 
-    	>>> chart.parse(['the','sheep','suffer'],sep='_')
+    	>>> chart.parse(['the','sheep','suffer'],sep='_', use_features=False)
     	['the', 'sheep', 'suffer']
     	Parse 1:
     	S
@@ -65,7 +65,7 @@ feature specifications of two types:
     	__v suffer
     	1 parses
 
-    	>>> chart.parse(['the','sheep','suffered'],sep='_')
+    	>>> chart.parse(['the','sheep','suffered'],sep='_', use_features=False)
     	['the', 'sheep', 'suffered']
     	Parse 1:
     	S
@@ -77,11 +77,11 @@ feature specifications of two types:
     	__v suffered
     	1 parses
 
-    	>>> chart.parse(['the','pigeon','suffer'],sep='_')
+    	>>> chart.parse(['the','pigeon','suffer'],sep='_', use_features=False)
     	['the', 'pigeon', 'suffer']
     	No parse
 
-    	>>> chart.parse(['the','pigeon','suffered'],sep='_')
+    	>>> chart.parse(['the','pigeon','suffered'],sep='_', use_features=False)
     	['the', 'pigeon', 'suffered']
     	Parse 1:
     	S
@@ -93,7 +93,7 @@ feature specifications of two types:
     	__v suffered
     	1 parses
 
-    	>>> chart.parse(['the','pigeon','suffers'],sep='_')
+    	>>> chart.parse(['the','pigeon','suffers'],sep='_', use_features=False)
     	['the', 'pigeon', 'suffers']
     	Parse 1:
     	S
@@ -111,13 +111,85 @@ import chart
 from collections import namedtuple
 import re
 import english
+import numpy.random as npr
+
+
+
 
 COMPLEX_CATEGORY=re.compile(r"(\w*)\s*\(([^)]+)\)")
 
 def restring(x):
 		return "\n".join(map(str,x))
 
+
+class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
+	"""
+	A syntactic category, with atomic features.
+	"""
+	def __repr__(self):
+		if len(self.features) == 0:
+			return "{cat}".format(cat=self.cat)
+		else:
+			return "{cat}({fs})".format(cat=self.cat,fs=",".join([":".join(x) for x in self.features]))
+
+
+
+	@staticmethod
+	def from_string(xx):
+
+		"""
+
+		>>> c = ImmutableCategory.from_string('Np(case:subj,num)')
+		>>> print c
+		Np(case:subj)
+		"""
+		if '(' in xx:
+			m = COMPLEX_CATEGORY.match(xx)
+			assert m,xx
+			cat,fs=m.groups()
+			return ImmutableCategory(cat=cat, features=ImmutableCategory._feats(fs.split(',')))
+
+		else:
+			return ImmutableCategory(cat=xx,features=None)
+
+	@staticmethod
+	def constraints(xx):
+		"""
+		Extract the constraints mentioned on the spec. These are
+		meaningful only in the context of a rule, so do not form
+		part of the category itself.
+
+		>>> ImmutableCategory.constraints('Np(case:subj,num)')
+		frozenset(['num'])
+
+		>>> ImmutableCategory.constraints('Np(case,tr,num)')
+		frozenset(['case', 'num', 'tr'])
+
+		"""
+		if '(' in xx:
+			m = COMPLEX_CATEGORY.match(xx)
+			assert m,xx
+			cat,fs=m.groups()
+			return frozenset([f for f in fs.split(',') if ':' not in f])
+		else:
+			return frozenset()
+
+
+	@staticmethod
+	def _feats(fs):
+		return tuple([tuple(f.split(':')) for f in fs if ':' in f])
+
+	
+
+
+
 class Category(namedtuple("Category",("cat","features"))):
+	"""
+	A syntactic category, with features. 
+
+	XXX should be immutable.
+
+	"""
 
 	def __repr__(self):
 		"""
@@ -176,6 +248,9 @@ class Category(namedtuple("Category",("cat","features"))):
 	def constraints(self):
 		"""
 		The constraints on the category.
+	
+		XXX this is a confusion. Constraints
+		live on rules, though they are SPECIFIED on categories.
 		"""
 		return frozenset({f for f in self.features 
 				if self.features[f] is None})
@@ -196,14 +271,71 @@ class Category(namedtuple("Category",("cat","features"))):
 	def fspec(self):
 		return ",".join(sorted([("{f}" if v is None else "{f}:{v}").format(f=f,v=v) for f,v in self.features.items()]))
 		
+
+
 class Constraints(dict):
 	"""
-	Represent a s
+	Represent a set of constraints.
 	"""
 	def __repr__(self):
 		def _cx(p):
 			return "{k}:{v}".format(k=p[0],v=sorted(p[1]))
 		return "{{{cs}}}".format(cs=",".join(map(_cx,self.items())))
+
+
+
+class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
+	"""
+	A rule made of immutable categories, that is itself immutable.
+
+	>>> ImmutableRule('S(num)',('Np(case:subj,num)','Vp(num)'))
+	ImmutableRule(lhs=S, rhs=(Np(case:subj), Vp), constraints=(('num', (0, 1, 2)),))
+
+	>>> ImmutableRule('Np(num,case)',('pn(case,num)','Relp(num)'))
+	ImmutableRule(lhs=Np, rhs=(pn, Relp), constraints=(('case', (0, 1)), ('num', (0, 1, 2))))
+	"""
+
+	@staticmethod
+	def _cc(lhs, rhs):
+		"""
+		Return a representation of the non-trivial constraints on the
+		rule.
+
+		"""
+		def _positions(key,sets):
+			return tuple([i for i,s in enumerate(sets) if key in s])
+
+		lhsc = ImmutableCategory.constraints(lhs)
+		rhsc = [ImmutableCategory.constraints(r)
+				for r in rhs]
+		keys = lhsc.union(*rhsc)
+
+		sets = [lhsc] + rhsc
+
+		return tuple([(key,_positions(key,sets))
+						for key in keys])
+
+	def __new__(cls,lhs,rhs):
+		left = ImmutableCategory.from_string(lhs)
+		
+		right = tuple([ImmutableCategory.from_string(r) for r in rhs])
+
+		
+
+
+		return super(ImmutableRule, cls).__new__(cls, lhs=left, 
+													rhs=right, 
+													constraints=ImmutableRule._cc(lhs,rhs))
+
+	
+
+		
+
+
+
+
+	
+
 
 class FeatureizedRule(namedtuple('FeatureizedRule',('lhs','rhs'))):
 	"""One production of a context-free grammar.
@@ -211,10 +343,12 @@ class FeatureizedRule(namedtuple('FeatureizedRule',('lhs','rhs'))):
 
 	Attributes
 	----------
-	lhs: Category
+	lhs: ImmutableCategory
 		The left hand side of the rule.
-	rhs: list [Category]
+	rhs: list [ImmutableCategory]
 	The right hand side of the rule.
+	constraints: Constraints
+		the compiled constraints on the rule.
 
 	Examples
 	--------
@@ -322,6 +456,38 @@ class FeatureizedRule(namedtuple('FeatureizedRule',('lhs','rhs'))):
 			lhs = lhs.strip()
 			for rhs in rhses.split('|'):
 				yield lhs,rhs.split()
+
+
+def compile_grammar(spec):
+	"""
+	Read the grammar and featureize it.
+
+	>>> print restring(compile_grammar(english.RULES))
+	S -> Np(case:subj) Vp {num:[0, 1, 2]}
+	S -> S conj S
+	S -> Np(case:subj) cop ppart {num:[0, 1, 2]}
+	S -> Np(case:subj) cop ppart passmarker Np(case:obj) {num:[0, 1, 2]}
+	SImp -> Vp
+	Relp -> rp S
+	Np -> det Nn {num:[0, 1, 2]}
+	Np -> Np Pp {case:[0, 1],num:[0, 1]}
+	Np -> pn {case:[0, 1],num:[0, 1]}
+	Np -> Np Relp {case:[0, 1],num:[0, 1]}
+	Np -> Np conj Np {case:[0, 1, 3]}
+	Nn -> n {num:[0, 1]}
+	Nn -> adj n {num:[0, 2]}
+	Vp -> v(tr:trans) Np(case:obj) {num:[0, 1]}
+	Vp -> v(tr:intrans) {num:[0, 1]}
+	Vp -> cop adj {num:[0, 1]}
+	Vp -> cop Pn {num:[0, 1]}
+	Vp -> v Np Np {num:[0, 1]}
+	Vp -> Vp Pp {num:[0, 1]}
+	Pn -> n
+	Pn -> n Pn
+	Pp -> prep Np(case:obj)
+	"""
+	sp = FeatureizedRule.string_pairs_from_rules(english.RULES)
+	return FeatureizedRule.grammar_from_string_pairs(sp)
 
 
 def compile_lexicon(spec):
@@ -461,8 +627,13 @@ def compile_lexicon(spec):
 		for cat in cats:
 			yield FeatureizedRule(lhs=cat,rhs=[key])
 
+class Grammar:
+	def __init__(self, rules, state=None):
+		self.state = (npr.RandomState(42) if state is None else state)
+		self.grammar = rules
 
 
+GRAMMAR= Grammar(list(compile_grammar(english.RULES)) + list(compile_lexicon(english.WORDS)))
 
 
 

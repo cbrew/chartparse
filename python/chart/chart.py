@@ -53,6 +53,19 @@ from heapq import heappush as hpush
 from heapq import heappop as hpop
 
 from english import GRAMMAR
+from features import GRAMMAR as FGRAMMAR
+import features
+
+
+def spawn_match(rule_cat,string_cat):
+    if rule_cat == string_cat:
+        return True
+    elif isinstance(rule_cat,features.Category) and isinstance(string_cat,features.Category):
+        return rule_cat.cat == string_cat.cat
+    elif isinstance(rule_cat,features.Category):
+        return rule_cat.cat == string_cat
+    else:
+        return False
 
 class LinearWords(object):
     """
@@ -83,6 +96,8 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
     """An edge is an assertion about some span of the text. It has a left and
     right boundary, a label, and a sequence of needs. If it has no needs,
     it is said to be **complete**, otherwise it is described as **partial**.
+
+    This code needs some work to make sense when the category is complex.
 
 
     Attributes
@@ -232,6 +247,7 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
         """
         return hash((self.label, self.left, self.right, self.needed))
 
+   
 
 
 
@@ -437,7 +453,7 @@ class Chart(object):
 
         Parameters
         ----------
-        lc: string
+        lc: string or Category
             the label of the left corner item to spawn from.
         i: integer
             the index of the cell where the empty edges are to go.
@@ -452,7 +468,9 @@ class Chart(object):
         for rule in self.grammar:
             lhs = rule.lhs
             rhs = rule.rhs
-            if rhs[0] == lc:
+            if spawn_match(rhs[0],lc):
+                # XXX currently doesn't work with features,
+                # because the Category class does not hash well. 
                 e = Edge(lhs, i, i,
                          tuple(rhs),
                          )
@@ -597,7 +615,7 @@ def treestring(t, tab=0,sep=' '):
     return s
 
 
-def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_source=LinearWords):
+def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_source=LinearWords, use_features=False):
     """
     Print out the parses of a sentence
 
@@ -635,6 +653,9 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
      No parse
 
     """
+    if use_features:
+        grammar = FGRAMMAR
+
     v = Chart(sentence, verbose=verbose,grammar=grammar,input_source=input_source)
     print sentence
     i = 0
