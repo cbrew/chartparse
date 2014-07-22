@@ -127,7 +127,7 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 	A syntactic category, with atomic features.
 	"""
 	def __repr__(self):
-		if len(self.features) == 0:
+		if self.features is None:
 			return "{cat}".format(cat=self.cat)
 		else:
 			return "{cat}({fs})".format(cat=self.cat,fs=",".join([":".join(x) for x in self.features]))
@@ -191,7 +191,7 @@ class Category(namedtuple("Category",("cat","features"))):
 
 	"""
 
-	def __repr__(self):
+	def __repl__(self):
 		"""
 		>>> c = Category.from_string('Np(case:subj,num)')
 		>>> print c
@@ -294,6 +294,8 @@ class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 	>>> ImmutableRule('Np(num,case)',('pn(case,num)','Relp(num)'))
 	ImmutableRule(lhs=Np, rhs=(pn, Relp), constraints=(('case', (0, 1)), ('num', (0, 1, 2))))
 	"""
+	def __str__(self):
+		return "{lhs} -> {rhs}".format(lhs=self.lhs,rhs=" ".join(map(str,self.rhs)))
 
 	@staticmethod
 	def _cc(lhs, rhs):
@@ -458,6 +460,48 @@ class FeatureizedRule(namedtuple('FeatureizedRule',('lhs','rhs'))):
 				yield lhs,rhs.split()
 
 
+def string_pairs_from_rules(spec):
+		"""
+		Create a set of string pairs from rules.
+
+    	>>> sp = FeatureizedRule.string_pairs_from_rules(english.RULES)
+    	>>> print restring(FeatureizedRule.grammar_from_string_pairs(sp))
+    	S -> Np(case:subj) Vp {num:[0, 1, 2]}
+    	S -> S conj S
+    	S -> Np(case:subj) cop ppart {num:[0, 1, 2]}
+    	S -> Np(case:subj) cop ppart passmarker Np(case:obj) {num:[0, 1, 2]}
+    	SImp -> Vp
+    	Relp -> rp S
+    	Np -> det Nn {num:[0, 1, 2]}
+    	Np -> Np Pp {case:[0, 1],num:[0, 1]}
+    	Np -> pn {case:[0, 1],num:[0, 1]}
+    	Np -> Np Relp {case:[0, 1],num:[0, 1]}
+    	Np -> Np conj Np {case:[0, 1, 3]}
+    	Nn -> n {num:[0, 1]}
+    	Nn -> adj n {num:[0, 2]}
+    	Vp -> v(tr:trans) Np(case:obj) {num:[0, 1]}
+    	Vp -> v(tr:intrans) {num:[0, 1]}
+    	Vp -> cop adj {num:[0, 1]}
+    	Vp -> cop Pn {num:[0, 1]}
+    	Vp -> v Np Np {num:[0, 1]}
+    	Vp -> Vp Pp {num:[0, 1]}
+    	Pn -> n
+    	Pn -> n Pn
+    	Pp -> prep Np(case:obj)
+		"""
+		lines = spec.split('\n')
+		for line in lines:
+			lhs,rhses = line.split('->')
+			lhs = lhs.strip()
+			for rhs in rhses.split('|'):
+				yield lhs,rhs.split()
+
+def grammar_from_string_pairs(string_pairs):
+		"""
+		expand a grammar from 
+		"""
+		return [ImmutableRule(x,y) for x,y in string_pairs]
+
 def compile_grammar(spec):
 	"""
 	Read the grammar and featureize it.
@@ -486,8 +530,8 @@ def compile_grammar(spec):
 	Pn -> n Pn
 	Pp -> prep Np(case:obj)
 	"""
-	sp = FeatureizedRule.string_pairs_from_rules(english.RULES)
-	return FeatureizedRule.grammar_from_string_pairs(sp)
+	sp = string_pairs_from_rules(english.RULES)
+	return grammar_from_string_pairs(sp)
 
 
 def compile_lexicon(spec):
@@ -621,11 +665,11 @@ def compile_lexicon(spec):
 			elif '|' in x:
 				for y in x.split('|'):
 					if y:
-						cats.append(Category.from_string(y))
+						cats.append(y)
 			else:
-				cats.append(Category.from_string(x))
+				cats.append(x)
 		for cat in cats:
-			yield FeatureizedRule(lhs=cat,rhs=[key])
+			yield ImmutableRule(lhs=cat,rhs=[key])
 
 class Grammar:
 	def __init__(self, rules, state=None):
