@@ -56,6 +56,7 @@ from heapq import heappop as hpop
 from english import GRAMMAR
 import features
 import english
+from features import ImmutableCategory as icat
 
 
 
@@ -293,6 +294,10 @@ class Chart(object):
                     print item   #pragma no cover
                 self.incorporate(item)
 
+    def show(self):
+        print self.partials
+        print self.completes
+
     def setup_words(self, words):
         """
         Instantiate the source of words.
@@ -351,7 +356,7 @@ class Chart(object):
         
         """
         return [e for e in self.completes[0] if
-                e.right == len(self.completes) - 1 and e.label == topCat]
+                e.right == len(self.completes) - 1 and self.compatible(topCat,e.label)]
 
     def add_prev(self, e, c):
         """
@@ -411,7 +416,7 @@ class Chart(object):
 
         """
         for p in partials:
-            if e.label == p.needed[0]:
+            if self.compatible(e.label,p.needed[0]):
                 hpush(self.agenda,
                        self.add_prev(Edge(p.label, p.left, e.right,
                                        p.needed[1:]), e))
@@ -435,10 +440,25 @@ class Chart(object):
 
         """
         for c in completes:
-            if e.needed[0] == c.label:
+            if self.compatible(e.needed[0],c.label):
                 hpush(self.agenda,
                     self.add_prev(Edge(e.label, e.left,
                                        c.right, e.needed[1:]), c))
+
+    def compatible(self,rule_category, chart_category):
+        if isinstance(rule_category, str) and isinstance(chart_category, str):
+            return rule_category == chart_category
+        elif isinstance(rule_category, icat) and isinstance(chart_category,icat):
+            if rule_category.cat != chart_category.cat:
+                return False
+
+            # check the features, Fail if atomic features conflict
+
+
+            # otherwise True
+            return True
+        else:
+            raise ValueError((rule_category, chart_category))
 
     def spawn(self, lc, i):
         """
@@ -446,6 +466,7 @@ class Chart(object):
 
         a spawned edge need only be added the first time that
         it is predicted. 
+
 
         Updates the `agenda`.
 
@@ -469,7 +490,7 @@ class Chart(object):
         for rule in self.grammar:
             lhs = rule.lhs
             rhs = rule.rhs
-            if rhs[0] == lc:
+            if self.compatible(rhs[0], lc):
                 e = Edge(lhs, i, i,
                          tuple(rhs),
                          )
@@ -536,7 +557,7 @@ class Chart(object):
         if prev:
             for c in prev:
                 for p in self.partials[c.left]:
-                    if p.needed[0] == c.label and p.label == e.label and\
+                    if self.compatible(p.needed[0], c.label) and self.compatible(p.label,e.label) and\
                             p.left == e.left and p.needed[1:] == e.needed:
                         for left in self.trees(p):
                             for right in self.trees(c):
@@ -606,15 +627,15 @@ def treestring(t, tab=0,sep=' '):
     """
 
     if len(t.children) == 1 and t.children[0].children == ():
-        s = (sep * tab) + t.parent + ' ' + t.children[0].parent + '\n'
+        s = (sep * tab) + str(t.parent) + ' ' + str(t.children[0].parent) + '\n'
     else:
-        s = (sep * tab) + t.parent + '\n'
+        s = (sep * tab) + str(t.parent) + '\n'
         for child in t.children:
             s += treestring(child, tab=tab + 1,sep=sep)
     return s
 
 
-def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_source=LinearWords, use_features=False):
+def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_source=LinearWords, use_features=False,show_chart=False):
     """
     Print out the parses of a sentence
 
@@ -654,9 +675,15 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
     """
     if use_features:
         grammar = features.Grammar(list(features.compile_grammar(english.RULES)) + list(features.compile_lexicon(english.WORDS)))
+        topcat = icat.from_string(topcat)
 
 
-    v = Chart(sentence, verbose=verbose,grammar=grammar,input_source=input_source)
+    v = Chart(sentence, verbose=verbose,grammar=grammar,input_source=input_source, using_features=use_features)
+
+    if show_chart:
+        v.show()
+        print v.solutions(topcat)
+
     print sentence
     i = 0
     sols = v.solutions(topcat)

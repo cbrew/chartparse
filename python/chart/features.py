@@ -41,17 +41,18 @@ feature specifications of two types:
 		a single right-hand side.
 
 
-		>>> chart.parse(['the','sheep','suffers'],sep='_', use_features=True)
-		['the', 'sheep', 'suffers']
-		Parse 1:
-		S
-		_Np
-		__det the
-		__Nn
-		___n sheep
-		_Vp
-		__v suffers
-		1 parses
+    	>>> chart.parse(['the','sheep','suffers'],sep='_', use_features=True)
+    	['the', 'sheep', 'suffers']
+    	Parse 1:
+    	S
+    	_Np
+    	__det the
+    	__Nn
+    	___n sheep
+    	_Vp
+    	__v(num:sing,tr:intrans) suffers
+    	1 parses
+	
 
     	>>> chart.parse(['the','sheep','suffer'],sep='_', use_features=True)
     	['the', 'sheep', 'suffer']
@@ -62,7 +63,7 @@ feature specifications of two types:
     	__Nn
     	___n sheep
     	_Vp
-    	__v suffer
+    	__v(num:pl,tr:intrans) suffer
     	1 parses
 
     	>>> chart.parse(['the','sheep','suffered'],sep='_', use_features=True)
@@ -74,7 +75,7 @@ feature specifications of two types:
     	__Nn
     	___n sheep
     	_Vp
-    	__v suffered
+    	__v(tr:intrans) suffered
     	1 parses
 
     	>>> chart.parse(['the','pigeon','suffer'],sep='_', use_features=True)
@@ -88,9 +89,9 @@ feature specifications of two types:
     	_Np
     	__det the
     	__Nn
-    	___n pigeon
+    	___n(num:sing) pigeon
     	_Vp
-    	__v suffered
+    	__v(tr:intrans) suffered
     	1 parses
 
     	>>> chart.parse(['the','pigeon','suffers'],sep='_', use_features=True)
@@ -100,9 +101,9 @@ feature specifications of two types:
     	_Np
     	__det the
     	__Nn
-    	___n pigeon
+    	___n(num:sing) pigeon
     	_Vp
-    	__v suffers
+    	__v(num:sing,tr:intrans) suffers
     	1 parses
 
 
@@ -126,6 +127,9 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 	"""
 	A syntactic category, with atomic features.
 	"""
+
+
+
 	def __repr__(self):
 		if not self.features:
 			return "{cat}".format(cat=self.cat)
@@ -508,7 +512,6 @@ class Grammar:
 		self.grammar = rules
 
 
-GRAMMAR= Grammar(list(compile_grammar(english.RULES)) + list(compile_lexicon(english.WORDS)))
 
 
 
