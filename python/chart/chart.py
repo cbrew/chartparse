@@ -7,6 +7,7 @@ comes with the wonderful Poplog AI development environment.
 
 This has been adjusted to work with a lattice of input possibilities.
 
+
 References
 ----------
 
@@ -53,19 +54,11 @@ from heapq import heappush as hpush
 from heapq import heappop as hpop
 
 from english import GRAMMAR
-from features import GRAMMAR as FGRAMMAR
 import features
+import english
 
 
-def spawn_match(rule_cat,string_cat):
-    if rule_cat == string_cat:
-        return True
-    elif isinstance(rule_cat,features.Category) and isinstance(string_cat,features.Category):
-        return rule_cat.cat == string_cat.cat
-    elif isinstance(rule_cat,features.Category):
-        return rule_cat.cat == string_cat
-    else:
-        return False
+
 
 class LinearWords(object):
     """
@@ -281,27 +274,33 @@ class Chart(object):
 
     """
 
-    def __init__(self, words, grammar=GRAMMAR, verbose=False, input_source=LinearWords):
+    def __init__(self, words, grammar=GRAMMAR, verbose=False, input_source=LinearWords, run=True, using_features=False):
         """
         Create and run the parser.
         """
-
+        self.using_features = using_features    
         self.input_source = input_source
         self.verbose = verbose
         self.grammar = grammar.grammar
         self.prev = defaultdict(set)
         self.agenda = []
         self.seed_agenda(words)
-        while self.agenda:
-            item = hpop(self.agenda)
-            if self.verbose:
-                print item   #pragma no cover
-            self.incorporate(item)
+        
+        if run:
+            while self.agenda:
+                item = hpop(self.agenda)
+                if self.verbose:
+                    print item   #pragma no cover
+                self.incorporate(item)
 
     def setup_words(self, words):
         """
         Instantiate the source of words.
         """
+        if self.using_features:
+            words = [features.ImmutableCategory.from_string(w) for w in words]
+
+
         return self.input_source(words)
     
     def seed_agenda(self, words):
@@ -464,13 +463,13 @@ class Chart(object):
         >>> ch.spawn('Np', 0)
         >>> ch.agenda[0]
         P(Np, 0, 0,('Np', 'Pp'))
+
+
         """
         for rule in self.grammar:
             lhs = rule.lhs
             rhs = rule.rhs
-            if spawn_match(rhs[0],lc):
-                # XXX currently doesn't work with features,
-                # because the Category class does not hash well. 
+            if rhs[0] == lc:
                 e = Edge(lhs, i, i,
                          tuple(rhs),
                          )
@@ -654,7 +653,8 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
 
     """
     if use_features:
-        grammar = FGRAMMAR
+        grammar = features.Grammar(list(features.compile_grammar(english.RULES)) + list(features.compile_lexicon(english.WORDS)))
+
 
     v = Chart(sentence, verbose=verbose,grammar=grammar,input_source=input_source)
     print sentence

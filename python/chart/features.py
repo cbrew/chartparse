@@ -41,7 +41,7 @@ feature specifications of two types:
 		a single right-hand side.
 
 
-		>>> chart.parse(['the','sheep','suffers'],sep='_', use_features=False)
+		>>> chart.parse(['the','sheep','suffers'],sep='_', use_features=True)
 		['the', 'sheep', 'suffers']
 		Parse 1:
 		S
@@ -53,7 +53,7 @@ feature specifications of two types:
 		__v suffers
 		1 parses
 
-    	>>> chart.parse(['the','sheep','suffer'],sep='_', use_features=False)
+    	>>> chart.parse(['the','sheep','suffer'],sep='_', use_features=True)
     	['the', 'sheep', 'suffer']
     	Parse 1:
     	S
@@ -65,7 +65,7 @@ feature specifications of two types:
     	__v suffer
     	1 parses
 
-    	>>> chart.parse(['the','sheep','suffered'],sep='_', use_features=False)
+    	>>> chart.parse(['the','sheep','suffered'],sep='_', use_features=True)
     	['the', 'sheep', 'suffered']
     	Parse 1:
     	S
@@ -77,11 +77,11 @@ feature specifications of two types:
     	__v suffered
     	1 parses
 
-    	>>> chart.parse(['the','pigeon','suffer'],sep='_', use_features=False)
+    	>>> chart.parse(['the','pigeon','suffer'],sep='_', use_features=True)
     	['the', 'pigeon', 'suffer']
     	No parse
 
-    	>>> chart.parse(['the','pigeon','suffered'],sep='_', use_features=False)
+    	>>> chart.parse(['the','pigeon','suffered'],sep='_', use_features=True)
     	['the', 'pigeon', 'suffered']
     	Parse 1:
     	S
@@ -93,7 +93,7 @@ feature specifications of two types:
     	__v suffered
     	1 parses
 
-    	>>> chart.parse(['the','pigeon','suffers'],sep='_', use_features=False)
+    	>>> chart.parse(['the','pigeon','suffers'],sep='_', use_features=True)
     	['the', 'pigeon', 'suffers']
     	Parse 1:
     	S
@@ -127,7 +127,7 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 	A syntactic category, with atomic features.
 	"""
 	def __repr__(self):
-		if self.features is None:
+		if not self.features:
 			return "{cat}".format(cat=self.cat)
 		else:
 			return "{cat}({fs})".format(cat=self.cat,fs=",".join([":".join(x) for x in self.features]))
@@ -193,9 +193,6 @@ class Category(namedtuple("Category",("cat","features"))):
 
 	def __repl__(self):
 		"""
-		>>> c = Category.from_string('Np(case:subj,num)')
-		>>> print c
-		Np(case:subj,num)
 		"""
 		if len(self.features) == 0:
 			return "{cat}".format(cat=self.cat)
@@ -273,14 +270,22 @@ class Category(namedtuple("Category",("cat","features"))):
 		
 
 
-class Constraints(dict):
+class Constraint(namedtuple('Constraint',('name','positions'))):
+	def __repr__(self):
+		return "{name}:{positions}".format(name=self.name,positions=sorted(self.positions))
+
+class Constraints(set):
 	"""
 	Represent a set of constraints.
+
+	Each constraint is a pair 
 	"""
 	def __repr__(self):
-		def _cx(p):
-			return "{k}:{v}".format(k=p[0],v=sorted(p[1]))
-		return "{{{cs}}}".format(cs=",".join(map(_cx,self.items())))
+		if len(self) == 0:
+			return ""
+		else:
+			return "{{{cf}}}".format(cf= ",".join([("{n}:{p}".format(n=x.name,p=sorted(x.positions))) 
+												for x in self]))
 
 
 
@@ -289,13 +294,17 @@ class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 	A rule made of immutable categories, that is itself immutable.
 
 	>>> ImmutableRule('S(num)',('Np(case:subj,num)','Vp(num)'))
-	ImmutableRule(lhs=S, rhs=(Np(case:subj), Vp), constraints=(('num', (0, 1, 2)),))
+ 	S -> Np(case:subj) Vp {num:[0, 1, 2]}
 
 	>>> ImmutableRule('Np(num,case)',('pn(case,num)','Relp(num)'))
-	ImmutableRule(lhs=Np, rhs=(pn, Relp), constraints=(('case', (0, 1)), ('num', (0, 1, 2))))
+	Np -> pn Relp {num:[0, 1, 2],case:[0, 1]}
+	
 	"""
-	def __str__(self):
-		return "{lhs} -> {rhs}".format(lhs=self.lhs,rhs=" ".join(map(str,self.rhs)))
+	def __repr__(self):
+		if len(self.constraints) == 0:
+			return "{lhs} -> {rhs}".format(lhs=self.lhs,rhs=" ".join(map(str,self.rhs)))
+		else:
+			return "{lhs} -> {rhs} {cc}".format(cc=self.constraints,lhs=self.lhs,rhs=" ".join(map(str,self.rhs)))
 
 	@staticmethod
 	def _cc(lhs, rhs):
@@ -314,8 +323,9 @@ class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 
 		sets = [lhsc] + rhsc
 
-		return tuple([(key,_positions(key,sets))
-						for key in keys])
+		return Constraints([Constraint(name=key,positions=_positions(key,sets))
+								for key in keys
+								if len(_positions(key,sets)) > 1])
 
 	def __new__(cls,lhs,rhs):
 		left = ImmutableCategory.from_string(lhs)
@@ -391,9 +401,7 @@ class FeatureizedRule(namedtuple('FeatureizedRule',('lhs','rhs'))):
 		the constrained feature is on lhs. These are non-ops, so we
 		suppress them.
 
-		>>> r = FeatureizedRule('S(num)',('Np(case:subj,num)','Vp(num)'))
-		>>> r.compiled_constraints
-		{num:[0, 1, 2]}
+	
 		"""
 		return  Constraints([(c,self._nc(c))
 							for c in self.constraints 
@@ -427,30 +435,7 @@ class FeatureizedRule(namedtuple('FeatureizedRule',('lhs','rhs'))):
 		"""
 		Create a set of string pairs from rules.
 
-    	>>> sp = FeatureizedRule.string_pairs_from_rules(english.RULES)
-    	>>> print restring(FeatureizedRule.grammar_from_string_pairs(sp))
-    	S -> Np(case:subj) Vp {num:[0, 1, 2]}
-    	S -> S conj S
-    	S -> Np(case:subj) cop ppart {num:[0, 1, 2]}
-    	S -> Np(case:subj) cop ppart passmarker Np(case:obj) {num:[0, 1, 2]}
-    	SImp -> Vp
-    	Relp -> rp S
-    	Np -> det Nn {num:[0, 1, 2]}
-    	Np -> Np Pp {case:[0, 1],num:[0, 1]}
-    	Np -> pn {case:[0, 1],num:[0, 1]}
-    	Np -> Np Relp {case:[0, 1],num:[0, 1]}
-    	Np -> Np conj Np {case:[0, 1, 3]}
-    	Nn -> n {num:[0, 1]}
-    	Nn -> adj n {num:[0, 2]}
-    	Vp -> v(tr:trans) Np(case:obj) {num:[0, 1]}
-    	Vp -> v(tr:intrans) {num:[0, 1]}
-    	Vp -> cop adj {num:[0, 1]}
-    	Vp -> cop Pn {num:[0, 1]}
-    	Vp -> v Np Np {num:[0, 1]}
-    	Vp -> Vp Pp {num:[0, 1]}
-    	Pn -> n
-    	Pn -> n Pn
-    	Pp -> prep Np(case:obj)
+		
 		"""
 		lines = spec.split('\n')
 		for line in lines:
@@ -464,30 +449,6 @@ def string_pairs_from_rules(spec):
 		"""
 		Create a set of string pairs from rules.
 
-    	>>> sp = FeatureizedRule.string_pairs_from_rules(english.RULES)
-    	>>> print restring(FeatureizedRule.grammar_from_string_pairs(sp))
-    	S -> Np(case:subj) Vp {num:[0, 1, 2]}
-    	S -> S conj S
-    	S -> Np(case:subj) cop ppart {num:[0, 1, 2]}
-    	S -> Np(case:subj) cop ppart passmarker Np(case:obj) {num:[0, 1, 2]}
-    	SImp -> Vp
-    	Relp -> rp S
-    	Np -> det Nn {num:[0, 1, 2]}
-    	Np -> Np Pp {case:[0, 1],num:[0, 1]}
-    	Np -> pn {case:[0, 1],num:[0, 1]}
-    	Np -> Np Relp {case:[0, 1],num:[0, 1]}
-    	Np -> Np conj Np {case:[0, 1, 3]}
-    	Nn -> n {num:[0, 1]}
-    	Nn -> adj n {num:[0, 2]}
-    	Vp -> v(tr:trans) Np(case:obj) {num:[0, 1]}
-    	Vp -> v(tr:intrans) {num:[0, 1]}
-    	Vp -> cop adj {num:[0, 1]}
-    	Vp -> cop Pn {num:[0, 1]}
-    	Vp -> v Np Np {num:[0, 1]}
-    	Vp -> Vp Pp {num:[0, 1]}
-    	Pn -> n
-    	Pn -> n Pn
-    	Pp -> prep Np(case:obj)
 		"""
 		lines = spec.split('\n')
 		for line in lines:
@@ -506,29 +467,7 @@ def compile_grammar(spec):
 	"""
 	Read the grammar and featureize it.
 
-	>>> print restring(compile_grammar(english.RULES))
-	S -> Np(case:subj) Vp {num:[0, 1, 2]}
-	S -> S conj S
-	S -> Np(case:subj) cop ppart {num:[0, 1, 2]}
-	S -> Np(case:subj) cop ppart passmarker Np(case:obj) {num:[0, 1, 2]}
-	SImp -> Vp
-	Relp -> rp S
-	Np -> det Nn {num:[0, 1, 2]}
-	Np -> Np Pp {case:[0, 1],num:[0, 1]}
-	Np -> pn {case:[0, 1],num:[0, 1]}
-	Np -> Np Relp {case:[0, 1],num:[0, 1]}
-	Np -> Np conj Np {case:[0, 1, 3]}
-	Nn -> n {num:[0, 1]}
-	Nn -> adj n {num:[0, 2]}
-	Vp -> v(tr:trans) Np(case:obj) {num:[0, 1]}
-	Vp -> v(tr:intrans) {num:[0, 1]}
-	Vp -> cop adj {num:[0, 1]}
-	Vp -> cop Pn {num:[0, 1]}
-	Vp -> v Np Np {num:[0, 1]}
-	Vp -> Vp Pp {num:[0, 1]}
-	Pn -> n
-	Pn -> n Pn
-	Pp -> prep Np(case:obj)
+	
 	"""
 	sp = string_pairs_from_rules(english.RULES)
 	return grammar_from_string_pairs(sp)
@@ -543,116 +482,8 @@ def compile_lexicon(spec):
 	Note: the format for the lexicon is more rigid than is ideal,
 	and intolerant of extra/missing whitespace. Fixable, but hardly
 	worth fixing.
+   
 
-    >>> print restring(sorted(compile_lexicon(english.WORDS)))
-    adj -> big
-    adj -> blue
-    adj -> east
-    adj -> enormous
-    adj -> green
-    adj -> little
-    adj -> red
-    conj -> and
-    conj -> or
-    cop(num:pl) -> are
-    cop(num:pl) -> were
-    cop(num:sing) -> is
-    cop(num:sing) -> was
-    det -> the
-    det(num:pl) -> fifty
-    det(num:pl) -> four
-    det(num:pl) -> these
-    det(num:pl) -> those
-    det(num:pl) -> three
-    det(num:pl) -> two
-    det(num:sing) -> a
-    det(num:sing) -> one
-    det(num:sing) -> that
-    md -> would
-    n -> sheep
-    n(num:pl) -> boys
-    n(num:pl) -> cages
-    n(num:pl) -> computers
-    n(num:pl) -> directors
-    n(num:pl) -> girls
-    n(num:pl) -> micros
-    n(num:pl) -> movies
-    n(num:pl) -> ones
-    n(num:pl) -> pdp11s
-    n(num:pl) -> pigeons
-    n(num:pl) -> programs
-    n(num:pl) -> rats
-    n(num:pl) -> rooms
-    n(num:pl) -> scientists
-    n(num:pl) -> undergraduates
-    n(num:pl) -> universities
-    n(num:sing) -> ball
-    n(num:sing) -> boy
-    n(num:sing) -> cage
-    n(num:sing) -> chris
-    n(num:sing) -> clint
-    n(num:sing) -> computer
-    n(num:sing) -> director
-    n(num:sing) -> eastwood
-    n(num:sing) -> girl
-    n(num:sing) -> house
-    n(num:sing) -> micro
-    n(num:sing) -> movie
-    n(num:sing) -> one
-    n(num:sing) -> pdp11
-    n(num:sing) -> pigeon
-    n(num:sing) -> program
-    n(num:sing) -> rat
-    n(num:sing) -> rector
-    n(num:sing) -> room
-    n(num:sing) -> university
-    n(num:sing) -> wood
-    passmarker -> by
-    pn(num:sing) -> me
-    pn(num:sing) -> mic
-    pn(num:sing) -> one
-    pn(num:sing) -> steve
-    pn(num:sing) -> stuart
-    pn(case:obj,num:pl) -> them
-    pn(case:obj,num:sing) -> her
-    pn(case:obj,num:sing) -> him
-    pn(case:subj,num:pl) -> they
-    pn(case:subj,num:sing) -> he
-    pn(case:subj,num:sing) -> she
-    ppart -> bitten
-    ppart -> caged
-    ppart -> hit
-    ppart -> programmed
-    ppart -> punished
-    ppart -> reinforced
-    prep -> by
-    prep -> in
-    prep -> on
-    rp(rptype:loc) -> where
-    rp(rptype:tmp) -> when
-    v(tr:ditrans) -> show
-    v(tr:intrans) -> ran
-    v(tr:intrans) -> suffered
-    v(tr:trans) -> caged
-    v(tr:trans) -> direct
-    v(tr:trans) -> dye
-    v(tr:trans) -> hit
-    v(tr:trans) -> programmed
-    v(tr:trans) -> punished
-    v(tr:trans) -> reinforced
-    v(num:pl,tr:intrans) -> run
-    v(num:pl,tr:intrans) -> suffer
-    v(num:pl,tr:trans) -> cage
-    v(num:pl,tr:trans) -> program
-    v(num:pl,tr:trans) -> punish
-    v(num:pl,tr:trans) -> reinforce
-    v(num:s,tr:trans) -> reinforces
-    v(num:sing,tr:intrans) -> runs
-    v(num:sing,tr:intrans) -> suffers
-    v(num:sing,tr:trans) -> cages
-    v(num:sing,tr:trans) -> hits
-    v(num:sing,tr:trans) -> programs
-    v(num:sing,tr:trans) -> punishes
 	"""
 	lines = spec.split('\n')
 	for line in lines:
