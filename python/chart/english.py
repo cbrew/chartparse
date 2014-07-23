@@ -112,6 +112,10 @@ class Rule(namedtuple('Rule', ('lhs','rhs'))):
                 lhs=self.lhs,
                 rhs=self.rhs)
 
+    @property
+    def constraints(self):
+        return None
+
 
 
 
@@ -198,7 +202,7 @@ SImp -> Vp
 Relp -> rp S
 Np(num,case) -> det(num) Nn(num) | Np(num,case) Pp | pn(num,case) | Np(num,case) Relp | Np(case) conj Np(case)
 Nn(num) -> n(num) | adj n(num)
-Vp(num)  -> v(num,tr:trans) Np(case:obj) | v(num,tr:intrans) | cop(num) adj | cop(num) Pn | v(num) Np Np
+Vp(num)  -> v(num,tr:trans) Np(case:obj) | v(num,tr:intrans) | cop(num) adj | cop(num) Pn | v(num,tr:ditrans) Np Np
 Vp(num) -> Vp(num) Pp
 Pn -> n | n Pn
 Pp -> prep Np(case:obj)"""

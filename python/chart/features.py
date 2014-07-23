@@ -174,7 +174,7 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 			m = COMPLEX_CATEGORY.match(xx)
 			assert m,xx
 			cat,fs=m.groups()
-			return frozenset([f for f in fs.split(',') if ':' not in f])
+			return frozenset([f.strip() for f in fs.split(',') if ':' not in f])
 		else:
 			return frozenset()
 
@@ -182,6 +182,27 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 	@staticmethod
 	def _feats(fs):
 		return tuple([tuple(f.split(':')) for f in fs if ':' in f])
+
+	@staticmethod 
+	def fcheck(c1,c2):
+		ff1 = c1.features
+		ff2 = c2.features
+
+		if (not ff1) or (not ff2):
+			return True
+
+		fkeys1,fvals1 = zip(*ff1)
+		fkeys2,fvals2 = zip(*ff2)
+		
+		for i,f1 in enumerate(fkeys1):
+			try:
+				v2 = fvals2[fkeys2.index(f1)]
+				v1 = fvals1[i]
+				if v1 != v2:
+					return False
+			except:
+				pass
+		return True
 
 	
 
@@ -296,19 +317,13 @@ class Constraints(set):
 class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 	"""
 	A rule made of immutable categories, that is itself immutable.
-
-	>>> ImmutableRule('S(num)',('Np(case:subj,num)','Vp(num)'))
- 	S -> Np(case:subj) Vp {num:[0, 1, 2]}
-
-	>>> ImmutableRule('Np(num,case)',('pn(case,num)','Relp(num)'))
-	Np -> pn Relp {num:[0, 1, 2],case:[0, 1]}
 	
 	"""
 	def __repr__(self):
 		if len(self.constraints) == 0:
 			return "{lhs} -> {rhs}".format(lhs=self.lhs,rhs=" ".join(map(str,self.rhs)))
 		else:
-			return "{lhs} -> {rhs} {cc}".format(cc=self.constraints,lhs=self.lhs,rhs=" ".join(map(str,self.rhs)))
+			return "{lhs} -> {rhs} {cs}".format(cs=self.constraint_strings,lhs=self.lhs,rhs=" ".join(map(str,self.rhs)))
 
 	@staticmethod
 	def _cc(lhs, rhs):
@@ -316,20 +331,24 @@ class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 		Return a representation of the non-trivial constraints on the
 		rule.
 
+		The constraints are a projection of the lhs and rhs. 
+
+
 		"""
-		def _positions(key,sets):
-			return tuple([i for i,s in enumerate(sets) if key in s])
 
 		lhsc = ImmutableCategory.constraints(lhs)
-		rhsc = [ImmutableCategory.constraints(r)
-				for r in rhs]
+		rhsc = tuple([ImmutableCategory.constraints(r) for r in rhs])
 		keys = lhsc.union(*rhsc)
+		if keys:
+			return (lhsc,rhsc)
+		else:
+			return None
 
-		sets = [lhsc] + rhsc
+	@property
+	def constraint_strings(self):
+		return "{{lhs={lhs},rhs={rhs}}} ".format(lhs=",".join(sorted(self.constraints[0])),
+													 rhs=[",".join(sorted(r)) for r in self.constraints[1]])
 
-		return Constraints([Constraint(name=key,positions=_positions(key,sets))
-								for key in keys
-								if len(_positions(key,sets)) > 1])
 
 	def __new__(cls,lhs,rhs):
 		left = ImmutableCategory.from_string(lhs)

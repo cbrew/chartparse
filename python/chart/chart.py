@@ -86,7 +86,7 @@ class LinearWords(object):
             yield i,w , i+1
 
 
-class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
+class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints'))):
     """An edge is an assertion about some span of the text. It has a left and
     right boundary, a label, and a sequence of needs. If it has no needs,
     it is said to be **complete**, otherwise it is described as **partial**.
@@ -104,6 +104,8 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
         the index of the right boundary of the edge.
     needed: strings
         strings representing the categories that the edge needs.
+    constraints: set(string)
+        features inherited from the spawning rule.
 
     Parameters
     ----------
@@ -120,7 +122,7 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
     Examples
     --------
 
-    >>> Edge('s',0,1,())
+    >>> Edge('s',0,1,(),None)
     C(s, 0, 1)
     
     """
@@ -132,10 +134,10 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
         Examples
         --------
 
-        >>> x = Edge('dog',0,1,())
+        >>> x = Edge('dog',0,1,(),None)
         >>> x.iscomplete()
         True
-        >>> x = Edge('s',0,1,('np','vp'))
+        >>> x = Edge('s',0,1,('np','vp'),None)
         >>> x.iscomplete()
         False
         """
@@ -148,15 +150,45 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
         Examples
         --------
 
-        >>> x = Edge('dog',0,1,())
+        >>> x = Edge('dog',0,1,(),None)
         >>> x.ispartial()
         ()
-        >>> x = Edge('s',0,1,('np','vp'))
+        >>> x = Edge('s',0,1,('np','vp'),None)
         >>> x.ispartial()
         ('np', 'vp')
 
         """
         return self.needed
+
+    def percolate(self, cat):
+        """
+        This is called when an edge has been
+        created by consuming the specified
+        category. This may result in percolation
+        of features to the parent and remaining
+        siblings.
+
+        It produces a new edge, in which the
+        atomic features on cat are copied onto
+        the original symbols.
+
+        """
+
+        if self.constraints and cat.features:
+            lhsc = self.constraints[0]
+            rhsc = self.constraints[1]
+            d = dict(cat.features)
+            keys = lhsc.union(*rhsc)
+
+            
+
+            
+             
+
+
+        
+        return self
+
 
     def __repr__(self):
         """
@@ -171,7 +203,7 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed'))):
 
         Examples
         --------
-        >>> Edge('dog',0,1,())
+        >>> Edge('dog',0,1,(),None)
         C(dog, 0, 1)
         """
     
@@ -303,7 +335,7 @@ class Chart(object):
         Instantiate the source of words.
         """
         if self.using_features:
-            words = [features.ImmutableCategory.from_string(w) for w in words]
+            words = [icat.from_string(w) for w in words]
 
 
         return self.input_source(words)
@@ -312,7 +344,7 @@ class Chart(object):
         """
         Go through the words, seeding the agenda.
 
-        XXX For generality, we want an interface where the
+        Uses an interface where the
         object that introduces the words is a finite-state
         machine whose arcs can be enumerated.
         """
@@ -339,7 +371,7 @@ class Chart(object):
             where the edge ends
 
         """
-        return Edge(word, i, j, ())
+        return Edge(label=word, left=i, right=j, needed=(),constraints=None)
 
     def solutions(self, topCat):
         """
@@ -418,8 +450,11 @@ class Chart(object):
         for p in partials:
             if self.compatible(e.label,p.needed[0]):
                 hpush(self.agenda,
-                       self.add_prev(Edge(p.label, p.left, e.right,
-                                       p.needed[1:]), e))
+                       self.add_prev(Edge(label=p.label, 
+                                        left=p.left, 
+                                        right=e.right,
+                                        needed=p.needed[1:],
+                                        constraints=p.constraints).percolate(e.label), e))
 
     def pairwithcompletes(self, e, completes):
         """
@@ -442,10 +477,15 @@ class Chart(object):
         for c in completes:
             if self.compatible(e.needed[0],c.label):
                 hpush(self.agenda,
-                    self.add_prev(Edge(e.label, e.left,
-                                       c.right, e.needed[1:]), c))
+                    self.add_prev(Edge(label=e.label, left=e.left,
+                                       right=c.right, 
+                                       needed=e.needed[1:],
+                                       constraints=e.constraints).percolate(c.label), c))
 
     def compatible(self,rule_category, chart_category):
+        """
+
+        """
         if isinstance(rule_category, str) and isinstance(chart_category, str):
             return rule_category == chart_category
         elif isinstance(rule_category, icat) and isinstance(chart_category,icat):
@@ -454,6 +494,8 @@ class Chart(object):
 
             # check the features, Fail if atomic features conflict
 
+            if not icat.fcheck(rule_category, chart_category):
+                return False
 
             # otherwise True
             return True
@@ -491,8 +533,9 @@ class Chart(object):
             lhs = rule.lhs
             rhs = rule.rhs
             if self.compatible(rhs[0], lc):
-                e = Edge(lhs, i, i,
-                         tuple(rhs),
+                e = Edge(label=lhs, left=i, right=i,
+                         needed=tuple(rhs),
+                         constraints=rule.constraints
                          )
                 if e not in self.partials[e.left]:
                     hpush(self.agenda,e)
@@ -510,14 +553,14 @@ class Chart(object):
         --------
 
         >>> ch = Chart(['the'])
-        >>> ch.incorporate(Edge('s',0,0,('banana',)))
-        >>> ch.incorporate(Edge('s',0,0,('banana',)))
+        >>> ch.incorporate(Edge('s',0,0,('banana',),None))
+        >>> ch.incorporate(Edge('s',0,0,('banana',),None))
         >>> sorted(ch.partials[0])[-1:]
         [P(s, 0, 0,('banana',))]
 
         >>> ch = Chart([])
-        >>> ch.incorporate(Edge('np',0,1,()))
-        >>> ch.incorporate(Edge('np',0,1,()))
+        >>> ch.incorporate(Edge('np',0,1,(),None))
+        >>> ch.incorporate(Edge('np',0,1,(),None))
         >>> ch.completes[0]
         set([C(np, 0, 1)])
 
