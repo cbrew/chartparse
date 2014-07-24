@@ -176,7 +176,58 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 				c = c.extend(k,v)
 		return c
 
+	def less_general(self,c):
+		"""
+		Check subsumption relation between self
+		and c. True if self is strictly more
+		specific than c.
 
+		>>> c1 = ImmutableCategory.from_string('A')
+		>>> c2 = ImmutableCategory.from_string('A(num:sing)')
+		>>> c3 = ImmutableCategory.from_string('A(case:subj)')
+		>>> c4 = ImmutableCategory.from_string('B')
+		>>> c5 = ImmutableCategory.from_string('A(num:sing,case:obj)')
+		>>> c6 = ImmutableCategory.from_string('A(num:sing,case:subj)')
+		>>> c1.less_general(c2)
+		False
+		>>> c2.less_general(c1)
+		True
+		>>> c3.less_general(c1)
+		True
+		>>> c1.less_general(c4)
+		False
+		>>> c4.less_general(c1)
+		False
+		>>> c3.less_general(c5)
+		False
+		>>> c5.less_general(c3)  
+		False
+		>>> c6.less_general(c3)
+		True
+		>>> c3.less_general(c6)
+		False
+		>>> c1.less_general(c1)
+		False
+		>>> c2.less_general(c2)
+		False
+
+
+
+		"""
+		if self.cat != c.cat:
+			return False
+
+		elif self.features is None:
+			# there are no features on self, so
+			# it cannot be more specific.
+			return False
+		elif c.features is None:
+			# there are features on self but not on c
+			# therefore self is more specific
+			return True
+		else: 
+			# 
+			return frozenset(self.features) > frozenset(c.features)
 
 
 
@@ -228,116 +279,52 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 
 	@staticmethod 
 	def fcheck(c1,c2):
+		"""
+		Check for a clash between features.
+
+		>>> c1 = ImmutableCategory.from_string('A')
+		>>> c2 = ImmutableCategory.from_string('A(num:sing)')
+		>>> c3 = ImmutableCategory.from_string('A(num:pl)')
+		>>> c4 = ImmutableCategory.from_string('A(num:sing,case:obj)')
+		>>> c5 = ImmutableCategory.from_string('A(num:sing,case:subj)')
+		>>> ImmutableCategory.fcheck(c1,c2)
+		True
+		>>> ImmutableCategory.fcheck(c2,c1)
+		True
+		>>> ImmutableCategory.fcheck(c1,c3)
+		True
+		>>> ImmutableCategory.fcheck(c2,c3)
+		False
+		>>> ImmutableCategory.fcheck(c3,c2)
+		False
+		>>> ImmutableCategory.fcheck(c4,c5)
+		False
+		>>> ImmutableCategory.fcheck(c5,c4)
+		False
+
+		"""
+
+
 		ff1 = c1.features
 		ff2 = c2.features
 
-		if (not ff1) or (not ff2):
+		if not ff1 or not ff2:
 			return True
 
-		fkeys1,fvals1 = zip(*ff1)
-		fkeys2,fvals2 = zip(*ff2)
-		
-		for i,f1 in enumerate(fkeys1):
-			try:
-				v2 = fvals2[fkeys2.index(f1)]
-				v1 = fvals1[i]
-				if v1 != v2:
-					return False
-			except:
-				pass
-		return True
+		s1 = frozenset(ff1)
+		s2 = frozenset(ff2)
 
 
+		# Use the symmetric difference operator
+		# to find the feature/value pairs 
+		# that are not shared
+		unshared = s1 ^ s2
 
-	
-
-
-
-class Category(namedtuple("Category",("cat","features"))):
-	"""
-	A syntactic category, with features. 
-
-	XXX should be immutable.
-
-	"""
-
-	def __repl__(self):
-		"""
-		"""
-		if len(self.features) == 0:
-			return "{cat}".format(cat=self.cat)
-		else:
-			return "{cat}({fs})".format(cat=self.cat,fs=self.fspec)
-
-	def as_string(self, features=True):
-		cat = "{cat}".format(cat=self.cat)
-		if features:
-			cat += self.afeats_string()
-		return cat
-
-	def afeats_string(self):
-		if self.atomic_features:
-					return "({fs})".format(fs=",".join(sorted([("{f}:{v}").format(f=f,v=v) 
-														for f,v in self.features.items()
-														if v is not None])))
-		else:
-			return ""
-
-	def cs_string(self):
-		if self.compiled_constraints:
-			return " {cs}".format(cs=self.compiled_constraints)
-		else:
-			return ""
-
-
-	@staticmethod
-	def from_string(xx):
-		if '(' in xx:
-			m = COMPLEX_CATEGORY.match(xx)
-			assert m,xx
-			cat,fs=m.groups()
-			return Category(cat=cat, features=Category._feats(fs))
-
-		else:
-			return Category(cat=xx,features={})
-	@staticmethod
-	def _feats(fs):
-		return dict([Category._feat(z.strip()) for z in fs.split(',') if z])
-	@staticmethod
-	def _feat(fs):
-		if ":" in fs:
-			f,v = fs.split(':')
-			return f,v
-		else:
-			return fs,None
-
-	@property
-	def constraints(self):
-		"""
-		The constraints on the category.
-	
-		XXX this is a confusion. Constraints
-		live on rules, though they are SPECIFIED on categories.
-		"""
-		return frozenset({f for f in self.features 
-				if self.features[f] is None})
-
-	
-	@property
-	def atomic_features(self):
-		"""
-		The atomic features on the category.
-		
-		>>> c = Category.from_string('Np(case:subj,num)')
-		>>> c.atomic_features
-		{'case': 'subj'}
-		"""
-		return {f:v for f,v in self.features.items() 
-				if self.features[f] is not None}
-	@property
-	def fspec(self):
-		return ",".join(sorted([("{f}" if v is None else "{f}:{v}").format(f=f,v=v) for f,v in self.features.items()]))
-		
+		# if the keys are all disjoint,
+		# unshared will be the same length
+		# as the dict built on it. Otherwise
+		# unshared will be longer.
+		return len(dict(unshared)) == len(unshared)
 
 
 
@@ -389,111 +376,6 @@ class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 		return super(ImmutableRule, cls).__new__(cls, lhs=left, 
 													rhs=right, 
 													constraints=ImmutableRule._cc(lhs,rhs))
-
-	
-
-		
-
-
-
-
-	
-
-
-class FeatureizedRule(namedtuple('FeatureizedRule',('lhs','rhs'))):
-	"""One production of a context-free grammar.
-
-
-	Attributes
-	----------
-	lhs: ImmutableCategory
-		The left hand side of the rule.
-	rhs: list [ImmutableCategory]
-	The right hand side of the rule.
-	constraints: Constraints
-		the compiled constraints on the rule.
-
-	Examples
-	--------
-	>>> r = FeatureizedRule('S(num)',('Np(case:subj,num)','Vp(num)'))
-	>>> r.constraints
-	frozenset(['num'])
-	"""
-
-	def __new__(cls,lhs,rhs):
-		left = Category.from_string(lhs)
-		right = tuple([Category.from_string(r) for r in rhs])
-		return super(FeatureizedRule, cls).__new__(cls, lhs=left, rhs=right)
-
-	def __repr__(self):
-		return self.as_string(constraints=True,features=True)
-		
-
-	def as_string(self,features=True,constraints=True):
-		if constraints and self.compiled_constraints:
-			return "{lhs} -> {rhs} {constraints}".format(lhs=self.lhs.as_string(),
-														constraints = self.compiled_constraints,
-														rhs=" ".join([r.as_string() for r in self.rhs]))
-		else:
-			return "{lhs} -> {rhs}".format(lhs=self.lhs.as_string(),
-				rhs=" ".join([r.as_string() for r in self.rhs]))
-
-
-	@property
-	def constraints(self):
-		return frozenset(self.lhs.constraints.union(*[r.constraints for r in self.rhs]))
-
-	@property 
-	def compiled_constraints(self):
-		"""
-		Return a representation of the non-trivial constraints on the
-		rule. The test for len > 1 is there because the grammar 
-		expansion can produce productions where the only mention of
-		the constrained feature is on lhs. These are non-ops, so we
-		suppress them.
-
-	
-		"""
-		return  Constraints([(c,self._nc(c))
-							for c in self.constraints 
-							if len(self._nc(c)) > 1 ])
-
-
-
-
-	def _nc(self,c):
-		r = set()
-		if c in self.lhs.constraints:
-			r.add(0)
-		for i,x in enumerate(self.rhs):
-			if c in x.constraints:
-				r.add(i+1)
-
-		return frozenset(r)
-
-
-	@staticmethod
-	def grammar_from_string_pairs(string_pairs):
-		"""
-		expand a grammar from 
-		"""
-		return [FeatureizedRule(x,y) for x,y in string_pairs]
-
-
-
-	@staticmethod
-	def string_pairs_from_rules(spec):
-		"""
-		Create a set of string pairs from rules.
-
-		
-		"""
-		lines = spec.split('\n')
-		for line in lines:
-			lhs,rhses = line.split('->')
-			lhs = lhs.strip()
-			for rhs in rhses.split('|'):
-				yield lhs,rhs.split()
 
 
 def string_pairs_from_rules(spec):

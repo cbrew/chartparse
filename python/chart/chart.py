@@ -128,38 +128,64 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
     """
     def less_general(self,e):
 
+        """
+        Check edge generality
+
+        >>> e1 = Edge(label=icat.from_string('S(num:pl)'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
+        >>> e2 = Edge(label=icat.from_string('S(num:pl)'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
+        >>> e3 = Edge(label=icat.from_string('S'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
+        >>> e4 = Edge(label=icat.from_string('S(num:pl,case:obj)'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
+        >>> e5 = Edge(label=icat.from_string('S(num:pl)'),left=0,right=2,needed=tuple([icat.from_string('Vp(case:obj)')]),constraints=None)
+        >>> e1.less_general(e1)
+        False
+        >>> e1.less_general(e2)
+        False
+        >>> e2.less_general(e1)
+        False
+        >>> e1.less_general(e3)
+        True
+        >>> e3.less_general(e1)
+        False
+        >>> e1.less_general(e4)
+        False
+        >>> e4.less_general(e1)
+        True
+        >>> e5.less_general(e1)
+        True
+        >>> e1.less_general(e5)
+        False
+        """
+
+    
+
         if isinstance(e.label,str):
             return False
 
-        assert isinstance(e.label,icat)
-        if e.label.cat != self.label.cat:
-            return False
         if e.left != self.left:
             return False
         if e.right != self.right:
             return False
 
-        if e.needed != self.needed:
-            # XXX this is inexact...
-            return False 
 
+        assert isinstance(self.label, icat)
+        assert isinstance(e.label, icat)
 
-
-        ff1 = self.label.features
-        ff2 = e.label.features
-        
-        if ff1 is None:
+        if self.label == e.label and self.needed == e.needed:
             return False
 
-        if ff2 is None and ff1 is not None:
-            return True 
-
-        fkeys1,fvals1 = zip(*ff1)
-        fkeys2,fvals2 = zip(*ff2)
-
-        # less general if fkeys1 is a subset of fkeys2
-        return set(fkeys2) < set(fkeys1)
-
+        # must be possible to make this code better
+        if self.label == e.label or self.label.less_general(e.label):
+            if len(self.needed) == len(e.needed):
+                for e1,e2 in zip(self.needed,e.needed):
+                    if e1 == e2 or e1.less_general(e2):
+                        pass
+                    else:
+                        return False
+                return True
+            else:
+                return False
+        else:
+            return False
 
 
     def iscomplete(self):
