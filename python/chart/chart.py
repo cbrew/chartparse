@@ -126,6 +126,41 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
     C(s, 0, 1)
     
     """
+    def less_general(self,e):
+
+        if isinstance(e.label,str):
+            return False
+
+        assert isinstance(e.label,icat)
+        if e.label.cat != self.label.cat:
+            return False
+        if e.left != self.left:
+            return False
+        if e.right != self.right:
+            return False
+
+        if e.needed != self.needed:
+            # XXX this is inexact...
+            return False 
+
+
+
+        ff1 = self.label.features
+        ff2 = e.label.features
+        
+        if ff1 is None:
+            return False
+
+        if ff2 is None and ff1 is not None:
+            return True 
+
+        fkeys1,fvals1 = zip(*ff1)
+        fkeys2,fvals2 = zip(*ff2)
+
+        # less general if fkeys1 is a subset of fkeys2
+        return set(fkeys2) < set(fkeys1)
+
+
 
     def iscomplete(self):
         """
@@ -551,6 +586,30 @@ class Chart(object):
                 if e not in self.partials[e.left]:
                     hpush(self.agenda,e)
 
+    @staticmethod
+    def membership_check(e, previous):
+        """
+        Check whether edge or equivalent
+        is present. 
+
+        Four cases
+
+        1) edge is present, return True and original set.
+        2) edge is entirely absent: return False and original set.
+        3) edge is less general than one in the set, return True and original set
+        4) edge is more general than one in the set, return True and modified set
+           that replaces the more specific with the new edge  
+        """
+        if e in previous:
+            return True,previous
+
+        for p in previous:
+            if e.less_general(p):
+                return True,previous
+            elif p.less_general(e):
+                return True, (previous - set([p])) | set([e]) 
+        return False,previous
+
     def incorporate(self, e):
         """
         Add e to the chart and trigger all corresponding actions.
@@ -577,7 +636,8 @@ class Chart(object):
 
         """
         if e.iscomplete():
-            if e in self.completes[e.left]:
+            flag,self.completes[e.left] = Chart.membership_check(e, self.completes[e.left])
+            if flag:  # # no new edge needs to be added
                 pass
             else:
                 self.completes[e.left].add(e)
@@ -587,7 +647,9 @@ class Chart(object):
                 self.spawn(e.label, e.left)
                 self.pairwithpartials(self.partials[e.left], e)
         elif e.ispartial():
-            if e in self.partials[e.right]:
+
+            flag,self.partials[e.right] = Chart.membership_check(e, self.partials[e.right])
+            if flag: # no new edge needs to be added
                 pass
             else:
                 self.partials[e.right].add(e)
@@ -738,7 +800,7 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
 
     """
     if use_features:
-        grammar = features.Grammar(list(features.compile_grammar(english.RULES)) + list(features.compile_lexicon(english.WORDS)))
+        grammar = features.make_feature_grammar()
         topcat = icat.from_string(topcat)
 
 

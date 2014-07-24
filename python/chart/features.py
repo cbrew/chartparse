@@ -130,6 +130,7 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 
 
 
+
 	def __repr__(self):
 		if not self.features:
 			return "{cat}".format(cat=self.cat)
@@ -245,6 +246,8 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 			except:
 				pass
 		return True
+
+
 
 	
 
@@ -555,8 +558,8 @@ class Grammar:
 		self.state = (npr.RandomState(42) if state is None else state)
 		self.grammar = rules
 
-
-
+def make_feature_grammar():
+	return Grammar(list(compile_grammar(english.RULES)) + list(compile_lexicon(english.WORDS)))
 
 
 
