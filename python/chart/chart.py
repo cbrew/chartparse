@@ -333,8 +333,13 @@ class Chart(object):
                 self.incorporate(item)
 
     def show(self):
-        print self.partials
-        print self.completes
+        for p in self.partials:
+            for e in p:
+                print e
+        for c in self.completes:
+            for e in c:
+                print e
+                    
 
     def setup_words(self, words):
         """
@@ -590,6 +595,14 @@ class Chart(object):
         else:
             raise "Huh? edge has to be either partial or complete!"  #pragma no cover
 
+    def allcompatible(self,cs1,cs2):
+        if len(cs1) != len(cs2):
+            return False
+        for c1,c2 in zip(cs1,cs2):
+            if not self.compatible(c1,c2):
+                return False
+        return True
+
     def trees(self, e):
         """
         Generate the trees that are rooted in edge.
@@ -602,12 +615,14 @@ class Chart(object):
 
         
         """
+        # import ipdb; ipdb.set_trace()
+
         prev = self.get_prev(e)
         if prev:
             for c in prev:
                 for p in self.partials[c.left]:
                     if self.compatible(p.needed[0], c.label) and self.compatible(p.label,e.label) and\
-                            p.left == e.left and p.needed[1:] == e.needed:
+                            p.left == e.left and self.allcompatible(p.needed[1:],e.needed):
                         for left in self.trees(p):
                             for right in self.trees(c):
                                 yield Tree(e.label,

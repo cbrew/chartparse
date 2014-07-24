@@ -85,10 +85,10 @@ feature specifications of two types:
     	>>> chart.parse(['the','pigeon','suffered'],sep='_', use_features=True)
     	['the', 'pigeon', 'suffered']
     	Parse 1:
-    	S
-    	_Np
+    	S(num:sing)
+    	_Np(num:sing)
     	__det the
-    	__Nn
+    	__Nn(num:sing)
     	___n(num:sing) pigeon
     	_Vp
     	__v(tr:intrans) suffered
@@ -97,12 +97,12 @@ feature specifications of two types:
     	>>> chart.parse(['the','pigeon','suffers'],sep='_', use_features=True)
     	['the', 'pigeon', 'suffers']
     	Parse 1:
-    	S
-    	_Np
+    	S(num:sing)
+    	_Np(num:sing)
     	__det the
-    	__Nn
+    	__Nn(num:sing)
     	___n(num:sing) pigeon
-    	_Vp
+    	_Vp(num:sing)
     	__v(num:sing,tr:intrans) suffers
     	1 parses
 
