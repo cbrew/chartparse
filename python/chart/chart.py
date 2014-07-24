@@ -184,8 +184,7 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
                        left=self.left,
                        right=self.right,
                        needed=newneeded,
-                       constraints= (newlabel.constraints,
-                                     tuple(x.constraints for x in newneeded)))
+                       constraints= (cs[0],cs[1][1:]))
            
 
             

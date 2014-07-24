@@ -44,12 +44,12 @@ feature specifications of two types:
     	>>> chart.parse(['the','sheep','suffers'],sep='_', use_features=True)
     	['the', 'sheep', 'suffers']
     	Parse 1:
-    	S
+    	S(num:sing)
     	_Np
     	__det the
     	__Nn
     	___n sheep
-    	_Vp
+    	_Vp(num:sing)
     	__v(num:sing,tr:intrans) suffers
     	1 parses
 	
@@ -57,12 +57,12 @@ feature specifications of two types:
     	>>> chart.parse(['the','sheep','suffer'],sep='_', use_features=True)
     	['the', 'sheep', 'suffer']
     	Parse 1:
-    	S
+    	S(num:pl)
     	_Np
     	__det the
     	__Nn
     	___n sheep
-    	_Vp
+    	_Vp(num:pl)
     	__v(num:pl,tr:intrans) suffer
     	1 parses
 
@@ -169,7 +169,6 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 
 	def extendc(self, constrain_keys, category):
 		c = self
-		assert isinstance(constrain_keys,frozenset),constrain_keys
 		for k in constrain_keys:
 			v = category.getfeat(k, None)
 			if v:
