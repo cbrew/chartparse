@@ -175,14 +175,21 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
         """
 
         if self.constraints and cat.features:
-            lhsc = self.constraints[0]
-            rhsc = self.constraints[1]
-            d = dict(cat.features)
-            keys = lhsc.union(*rhsc)
+
+            cs = self.constraints
+            newlabel = self.label.extendc(cs[0], cat)
+            # N.B. this is where we cut away the first item in the constraints field.
+            newneeded = tuple([r.extendc(c, cat) for c,r in zip(cs[1][1:],self.needed)])
+            return Edge(label = newlabel,
+                       left=self.left,
+                       right=self.right,
+                       needed=newneeded,
+                       constraints= (newlabel.constraints,
+                                     tuple(x.constraints for x in newneeded)))
+           
 
             
 
-            
              
 
 

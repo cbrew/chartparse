@@ -134,7 +134,49 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 		if not self.features:
 			return "{cat}".format(cat=self.cat)
 		else:
-			return "{cat}({fs})".format(cat=self.cat,fs=",".join([":".join(x) for x in self.features]))
+			return "{cat}({fs})".format(cat=self.cat,fs=",".join([":".join(x) for x in sorted(self.features)]))
+
+	def getfeat(self, key, default=None):
+		"""
+		Obtain the value of a feature.
+
+		>>> c = ImmutableCategory.from_string('Np(case:subj,num)')
+		>>> c.getfeat('case')
+		'subj'
+		"""
+		try:
+			return dict(self.features)[key]
+		except:
+			return default
+
+	def extend(self, key, value):
+		"""
+		Add a feature with given value.
+		Return a copy, because categories are immutable.
+
+		>>> c = ImmutableCategory.from_string('Np(case:subj,num)')
+		>>> c.extend('anim','animate')
+		Np(anim:animate,case:subj)
+
+		>>> c = ImmutableCategory.from_string('Np(case:subj,num)')
+		>>> c.extend('case','obj')
+		Np(case:obj)
+
+		"""
+		d = dict(self.features)
+		d[key]=value
+		return ImmutableCategory(self.cat,tuple(d.items()))
+
+	def extendc(self, constrain_keys, category):
+		c = self
+		assert isinstance(constrain_keys,frozenset),constrain_keys
+		for k in constrain_keys:
+			v = category.getfeat(k, None)
+			if v:
+				c = c.extend(k,v)
+		return c
+
+
 
 
 
@@ -144,7 +186,7 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 		"""
 
 		>>> c = ImmutableCategory.from_string('Np(case:subj,num)')
-		>>> print c
+		>>> c
 		Np(case:subj)
 		"""
 		if '(' in xx:
@@ -155,6 +197,7 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 
 		else:
 			return ImmutableCategory(cat=xx,features=None)
+
 
 	@staticmethod
 	def constraints(xx):
@@ -294,23 +337,6 @@ class Category(namedtuple("Category",("cat","features"))):
 		return ",".join(sorted([("{f}" if v is None else "{f}:{v}").format(f=f,v=v) for f,v in self.features.items()]))
 		
 
-
-class Constraint(namedtuple('Constraint',('name','positions'))):
-	def __repr__(self):
-		return "{name}:{positions}".format(name=self.name,positions=sorted(self.positions))
-
-class Constraints(set):
-	"""
-	Represent a set of constraints.
-
-	Each constraint is a pair 
-	"""
-	def __repr__(self):
-		if len(self) == 0:
-			return ""
-		else:
-			return "{{{cf}}}".format(cf= ",".join([("{n}:{p}".format(n=x.name,p=sorted(x.positions))) 
-												for x in self]))
 
 
 
