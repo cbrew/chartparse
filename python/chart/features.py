@@ -176,6 +176,9 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 				c = c.extend(k,v)
 		return c
 
+	def leq_general(self,c):
+		return self == c or self.less_general(c)
+
 	def less_general(self,c):
 		"""
 		Check subsumption relation between self

@@ -73,7 +73,6 @@ def test_subsumption():
 	>>> ch.completes[0]
 	set([C(Pn, 0, 1), C(Nn(num:pl), 0, 1), C(pigeons, 0, 1), C(n, 0, 1)])
 
-
 	>>> ch = chart.Chart(['the','pigeons','are','punished'], grammar=make_feature_grammar(),using_features=True)
 	>>> ps =  sorted(ch.partials[2])
 	>>> edge = sorted(ch.partials[2])[-3]

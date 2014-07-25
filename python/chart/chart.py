@@ -129,7 +129,7 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
     def less_general(self,e):
 
         """
-        Check edge generality
+        Check edges for strict differences in generality. 
 
         >>> e1 = Edge(label=icat.from_string('S(num:pl)'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
         >>> e2 = Edge(label=icat.from_string('S(num:pl)'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
@@ -155,37 +155,13 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
         >>> e1.less_general(e5)
         False
         """
-
-    
-
-        if isinstance(e.label,str):
-            return False
-
-        if e.left != self.left:
-            return False
-        if e.right != self.right:
-            return False
-
-
-        assert isinstance(self.label, icat)
-        assert isinstance(e.label, icat)
-
-        if self.label == e.label and self.needed == e.needed:
-            return False
-
-        # must be possible to make this code better
-        if self.label == e.label or self.label.less_general(e.label):
-            if len(self.needed) == len(e.needed):
-                for e1,e2 in zip(self.needed,e.needed):
-                    if e1 == e2 or e1.less_general(e2):
-                        pass
-                    else:
-                        return False
-                return True
-            else:
-                return False
-        else:
-            return False
+        return (not isinstance(e.label, str) and 
+                (e.left == self.left) and (e.right == self.right) and
+                (self.label != e.label or self.needed != e.needed) and 
+                self.label.leq_general(e.label) and 
+                len(self.needed) == len(e.needed) and 
+                all([e1.leq_general(e2) for e1,e2 in zip(self.needed,e.needed)]))
+        
 
 
     def iscomplete(self):
