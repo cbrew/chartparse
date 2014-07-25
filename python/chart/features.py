@@ -166,7 +166,7 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 		"""
 		d = dict(self.features)
 		d[key]=value
-		return ImmutableCategory(self.cat,tuple(d.items()))
+		return ImmutableCategory(self.cat,frozenset([tuple(x) for x in d.items()]))
 
 	def extendc(self, constrain_keys, category):
 		c = self
@@ -247,7 +247,7 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 			return ImmutableCategory(cat=cat, features=ImmutableCategory._feats(fs.split(',')))
 
 		else:
-			return ImmutableCategory(cat=xx,features=None)
+			return ImmutableCategory(cat=xx,features=frozenset())
 
 
 	@staticmethod
@@ -275,7 +275,7 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 
 	@staticmethod
 	def _feats(fs):
-		return tuple([tuple(f.split(':')) for f in fs if ':' in f])
+		return frozenset([tuple(f.split(':')) for f in fs if ':' in f])
 
 	@staticmethod 
 	def fcheck(c1,c2):

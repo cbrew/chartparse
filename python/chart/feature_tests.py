@@ -40,8 +40,8 @@ def test_subsumption():
 	4
 
 	>>> ch = chart.Chart(['pigeons'], grammar=make_feature_grammar(),using_features=True)
-	>>> list(ch.completes[0])[0]
-	C(n(num:pl), 0, 1)
+	>>> ch.completes[0]
+	set([C(Pn, 0, 1), C(n(num:pl), 0, 1), C(Nn(num:pl), 0, 1), C(pigeons, 0, 1)])
 
 
 	Adding an edge that is already there should be a non-op
@@ -54,8 +54,8 @@ def test_subsumption():
 	>>> ch = chart.Chart(['pigeons'], grammar=make_feature_grammar(),using_features=True)
 	>>> edge = chart.Edge(label=icat.from_string('n(num:pl,case:subj)'),left=0,right=1,needed=tuple([]),constraints=None)
 	>>> ch.incorporate(edge)
-	>>> list(ch.completes[0])[0]
-	C(n(num:pl), 0, 1)
+	>>> ch.completes[0]
+	set([C(Pn, 0, 1), C(n(num:pl), 0, 1), C(Nn(num:pl), 0, 1), C(pigeons, 0, 1)])
 
 
 	Adding an edge that is less specific than one already there should result
@@ -70,8 +70,8 @@ def test_subsumption():
 	>>> ch = chart.Chart(['pigeons'], grammar=make_feature_grammar(),using_features=True)
 	>>> edge = chart.Edge(label=icat.from_string('n'),left=0,right=1,needed=tuple([]),constraints=None)
 	>>> ch.incorporate(edge)
-	>>> list(ch.completes[0])[0]
-	C(n, 0, 1)
+	>>> ch.completes[0]
+	set([C(Pn, 0, 1), C(Nn(num:pl), 0, 1), C(pigeons, 0, 1), C(n, 0, 1)])
 
 
 	>>> ch = chart.Chart(['the','pigeons','are','punished'], grammar=make_feature_grammar(),using_features=True)
