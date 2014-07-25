@@ -280,7 +280,6 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 	def _feats(fs):
 		return frozenset([tuple(f.split(':')) for f in fs if ':' in f])
 
-	@staticmethod 
 	def fcheck(c1,c2):
 		"""
 		Check for a clash between features.
@@ -290,19 +289,19 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 		>>> c3 = ImmutableCategory.from_string('A(num:pl)')
 		>>> c4 = ImmutableCategory.from_string('A(num:sing,case:obj)')
 		>>> c5 = ImmutableCategory.from_string('A(num:sing,case:subj)')
-		>>> ImmutableCategory.fcheck(c1,c2)
+		>>> c1.fcheck(c2)
 		True
-		>>> ImmutableCategory.fcheck(c2,c1)
+		>>> c2.fcheck(c1)
 		True
-		>>> ImmutableCategory.fcheck(c1,c3)
+		>>> c1.fcheck(c3)
 		True
-		>>> ImmutableCategory.fcheck(c2,c3)
+		>>> c2.fcheck(c3)
 		False
-		>>> ImmutableCategory.fcheck(c3,c2)
+		>>> c3.fcheck(c2)
 		False
-		>>> ImmutableCategory.fcheck(c4,c5)
+		>>> c4.fcheck(c5)
 		False
-		>>> ImmutableCategory.fcheck(c5,c4)
+		>>> c5.fcheck(c4)
 		False
 
 		"""

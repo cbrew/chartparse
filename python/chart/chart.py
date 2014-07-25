@@ -537,16 +537,8 @@ class Chart(object):
         if isinstance(rule_category, str) and isinstance(chart_category, str):
             return rule_category == chart_category
         elif isinstance(rule_category, icat) and isinstance(chart_category,icat):
-            if rule_category.cat != chart_category.cat:
-                return False
-
             # check the features, Fail if atomic features conflict
-
-            if not icat.fcheck(rule_category, chart_category):
-                return False
-
-            # otherwise True
-            return True
+            return (rule_category.cat == chart_category.cat)  and rule_category.fcheck(chart_category)
         else:
             raise ValueError((rule_category, chart_category))
 
