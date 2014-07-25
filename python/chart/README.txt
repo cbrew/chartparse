@@ -9,6 +9,8 @@ Psychology students in 1983 or so.
 Some additions to the grammar to allow commands to an imaginary movie system, and
 input as if from a lattice.
 
+The system now supports atomic features. 
+
 Needs: Python -2.7  http://www.python.org/
 
 
