@@ -39,6 +39,54 @@ S
    v suffer
 1 parses
 
+>>> parse(["the","pigeons",'are','punished','and','they','suffer',"and","they","suffer"])
+['the', 'pigeons', 'are', 'punished', 'and', 'they', 'suffer', 'and', 'they', 'suffer']
+Parse 1:
+S
+ S
+  S
+   Np
+    det the
+    Nn
+     n pigeons
+   cop are
+   ppart punished
+  conj and
+  S
+   Np
+    pn they
+   Vp
+    v suffer
+ conj and
+ S
+  Np
+   pn they
+  Vp
+   v suffer
+Parse 2:
+S
+ S
+  Np
+   det the
+   Nn
+    n pigeons
+  cop are
+  ppart punished
+ conj and
+ S
+  S
+   Np
+    pn they
+   Vp
+    v suffer
+  conj and
+  S
+   Np
+    pn they
+   Vp
+    v suffer
+2 parses
+
 """
 
 ##
@@ -126,6 +174,11 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
     C(s, 0, 1)
     
     """
+    def __new__(cls, label, left, right, needed, constraints):
+        if constraints is None: 
+            constraints = (frozenset(),tuple([frozenset() for _ in needed]))
+        return super(Edge, cls).__new__(cls,label=label,left=left,right=right,needed=needed,constraints=constraints)
+
     def less_general(self,e):
 
         """
@@ -159,10 +212,21 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
                 (e.left == self.left) and (e.right == self.right) and
                 (self.label != e.label or self.needed != e.needed) and 
                 self.label.leq_general(e.label) and 
-                len(self.needed) == len(e.needed) and 
+                len(self.needed) == len(e.needed) and
+                self.constraints_leq_general(e) and 
                 all([e1.leq_general(e2) for e1,e2 in zip(self.needed,e.needed)]))
         
+    def constraints_leq_general(self,e):
+        """
+        Check constraints. True if self's constraints are
+        more specific.
 
+        XXX Currently not operational.
+
+        """
+        return True
+
+        
 
     def iscomplete(self):
         """
@@ -211,17 +275,20 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
 
         """
 
-        if self.constraints and cat.features:
+        # non-op if working with comple categories
+        if isinstance(self.label,str):
+            return self
 
-            cs = self.constraints
-            newlabel = self.label.extendc(cs[0], cat)
-            # N.B. this is where we cut away the first item in the constraints field.
-            newneeded = tuple([r.extendc(c, cat) for c,r in zip(cs[1][1:],self.needed)])
-            return Edge(label = newlabel,
-                       left=self.left,
-                       right=self.right,
-                       needed=newneeded,
-                       constraints= (cs[0],cs[1][1:]))
+        #     
+        cs = self.constraints
+        newlabel = self.label.extendc(cs[0], cat)
+        # N.B. this is where we cut away the first item in the constraints field.
+        newneeded = tuple([r.extendc(c, cat) for c,r in zip(cs[1][1:],self.needed)])
+        return Edge(label = newlabel,
+                   left=self.left,
+                    right=self.right,
+                    needed=newneeded,
+                    constraints= (cs[0],cs[1][1:]))
            
 
             
