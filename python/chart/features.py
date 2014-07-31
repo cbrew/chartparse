@@ -127,10 +127,6 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 	"""
 	A syntactic category, with atomic features.
 	"""
-
-
-
-
 	def __repr__(self):
 		if not self.features:
 			return "{cat}".format(cat=self.cat)
@@ -282,13 +278,15 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 
 	def fcheck(c1,c2):
 		"""
-		Check for a clash between features.
+		Check for a clash between features. N.B. this code
+		is in the inner loop, and may need speeding up.
 
 		>>> c1 = ImmutableCategory.from_string('A')
 		>>> c2 = ImmutableCategory.from_string('A(num:sing)')
 		>>> c3 = ImmutableCategory.from_string('A(num:pl)')
 		>>> c4 = ImmutableCategory.from_string('A(num:sing,case:obj)')
 		>>> c5 = ImmutableCategory.from_string('A(num:sing,case:subj)')
+		>>> c6 = ImmutableCategory.from_string('B')
 		>>> c1.fcheck(c2)
 		True
 		>>> c2.fcheck(c1)
@@ -310,17 +308,18 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 		ff1 = c1.features
 		ff2 = c2.features
 
-		if not ff1 or not ff2:
-			return True
 
-		s1 = frozenset(ff1)
-		s2 = frozenset(ff2)
+
+		# if not ff1 or not ff2:
+		#	return True
+
+		
 
 
 		# Use the symmetric difference operator
 		# to find the feature/value pairs 
 		# that are not shared
-		unshared = s1 ^ s2
+		unshared = ff1 ^ ff2
 
 		# if the keys are all disjoint,
 		# unshared will be the same length

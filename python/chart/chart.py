@@ -98,8 +98,8 @@ S
 
 
 from collections import defaultdict, namedtuple
-from heapq import heappush as hpush
-from heapq import heappop as hpop
+# from heapq import heappush as hpush
+# from heapq import heappop as hpop
 
 from english import GRAMMAR
 import features
@@ -107,6 +107,17 @@ import english
 from features import ImmutableCategory as icat
 
 
+def hpush(heap,item):
+    """
+    Simple list based alternative to heapq.heappop()
+    """
+    heap.append(item)
+
+def hpop(heap):
+    """
+    Simple list based alternative to heapq.heappop()
+    """
+    return heap.pop()
 
 
 class LinearWords(object):
@@ -133,255 +144,10 @@ class LinearWords(object):
         for i,w in enumerate(self.words):
             yield i,w , i+1
 
-
-class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints'))):
-    """An edge is an assertion about some span of the text. It has a left and
-    right boundary, a label, and a sequence of needs. If it has no needs,
-    it is said to be **complete**, otherwise it is described as **partial**.
-
-    This code needs some work to make sense when the category is complex.
+from edges import Edge
 
 
-    Attributes
-    ----------
-    label : string
-        the mother node of the constituent.
-    left: integer [0..n]
-        the index of the left boundary of the edge.
-    right: integer[0..n]
-        the index of the right boundary of the edge.
-    needed: strings
-        strings representing the categories that the edge needs.
-    constraints: set(string)
-        features inherited from the spawning rule.
 
-    Parameters
-    ----------
-    label : string
-        the mother node of the constituent.
-    left: integer [0..n]
-        the index of the left boundary of the edge.
-    right: integer[0..n]
-        the index of the right boundary of the edge.
-    needed: strings
-        strings representing the categories that the edge needs.
-    
-
-    Examples
-    --------
-
-    >>> Edge('s',0,1,(),None)
-    C(s, 0, 1)
-    
-    """
-    def __new__(cls, label, left, right, needed, constraints):
-        if constraints is None: 
-            constraints = (frozenset(),tuple([frozenset() for _ in needed]))
-        return super(Edge, cls).__new__(cls,label=label,left=left,right=right,needed=needed,constraints=constraints)
-
-    def less_general(self,e):
-
-        """
-        Check edges for strict differences in generality. 
-
-        >>> e1 = Edge(label=icat.from_string('S(num:pl)'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
-        >>> e2 = Edge(label=icat.from_string('S(num:pl)'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
-        >>> e3 = Edge(label=icat.from_string('S'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
-        >>> e4 = Edge(label=icat.from_string('S(num:pl,case:obj)'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
-        >>> e5 = Edge(label=icat.from_string('S(num:pl)'),left=0,right=2,needed=tuple([icat.from_string('Vp(case:obj)')]),constraints=None)
-        >>> e1.less_general(e1)
-        False
-        >>> e1.less_general(e2)
-        False
-        >>> e2.less_general(e1)
-        False
-        >>> e1.less_general(e3)
-        True
-        >>> e3.less_general(e1)
-        False
-        >>> e1.less_general(e4)
-        False
-        >>> e4.less_general(e1)
-        True
-        >>> e5.less_general(e1)
-        True
-        >>> e1.less_general(e5)
-        False
-        """
-        return (not isinstance(e.label, str) and 
-                (e.left == self.left) and (e.right == self.right) and
-                (self.label != e.label or self.needed != e.needed) and 
-                self.label.leq_general(e.label) and 
-                len(self.needed) == len(e.needed) and
-                self.constraints_leq_general(e) and 
-                all([e1.leq_general(e2) for e1,e2 in zip(self.needed,e.needed)]))
-        
-    def constraints_leq_general(self,e):
-        """
-        Check constraints. True if self's constraints are
-        more specific.
-
-        XXX Currently not operational.
-
-        """
-        return True
-
-        
-
-    def iscomplete(self):
-        """
-        Test if the edge is complete.
-
-        Examples
-        --------
-
-        >>> x = Edge('dog',0,1,(),None)
-        >>> x.iscomplete()
-        True
-        >>> x = Edge('s',0,1,('np','vp'),None)
-        >>> x.iscomplete()
-        False
-        """
-        return not self.needed
-
-    def ispartial(self):
-        """
-        Test if the edge is partial.
-
-        Examples
-        --------
-
-        >>> x = Edge('dog',0,1,(),None)
-        >>> x.ispartial()
-        ()
-        >>> x = Edge('s',0,1,('np','vp'),None)
-        >>> x.ispartial()
-        ('np', 'vp')
-
-        """
-        return self.needed
-
-    def percolate(self, cat):
-        """
-        This is called when an edge has been
-        created by consuming the specified
-        category. This may result in percolation
-        of features to the parent and remaining
-        siblings.
-
-        It produces a new edge, in which the
-        atomic features on cat are copied onto
-        the original symbols.
-
-        """
-
-        # non-op if working with comple categories
-        if isinstance(self.label,str):
-            return self
-
-        #     
-        cs = self.constraints
-        newlabel = self.label.extendc(cs[0], cat)
-        # N.B. this is where we cut away the first item in the constraints field.
-        newneeded = tuple([r.extendc(c, cat) for c,r in zip(cs[1][1:],self.needed)])
-        return Edge(label = newlabel,
-                   left=self.left,
-                    right=self.right,
-                    needed=newneeded,
-                    constraints= (cs[0],cs[1][1:]))
-           
-
-            
-
-             
-
-
-        
-        return self
-
-
-    def __repr__(self):
-        """
-        Produces a textual description of the Edge.
-
-        Part of Python's infrastructure for printing.
-
-        See Also
-        --------
-    
-        http://docs.python.org/reference/datamodel.html#object.__repr__
-
-        Examples
-        --------
-        >>> Edge('dog',0,1,(),None)
-        C(dog, 0, 1)
-        """
-    
-        if self.iscomplete():
-            template = 'C({label}, {lhs}, {rhs})'
-        elif self.ispartial:
-            template = 'P({label}, {lhs}, {rhs},{needed})'
-        else:
-            raise ValueError('edge not printable')
-
-        return template.format(
-            label=self.label,
-            lhs=self.left,
-            rhs=self.right,
-            needed=self.needed)
-
-    def __lt__(self, other):
-        """Rich comparison for edges.
-        """
-        assert isinstance(other, Edge)
-
-        t1 = (self.span_length(),
-              self.left,
-              self.right,
-              self.label,
-              self.needed)
-        t2 = (other.span_length(),
-              other.left,
-              other.right,
-              other.label,
-              other.needed)
-        return t1 < t2
-
-    def __gt__(self, other):
-        """Rich comparison for edges.
-        """
-        return other < self #pragma no cover
-
-    def span_length(self):
-        """
-        Return the length of a span, in words.
-        """
-        return self.right - self.left
-
-    def __eq__(self, other):
-        """
-        This method is required because we want to make Edges usable in
-        Python's set and map datastructures.
-
-        See Also
-        --------
-        http://docs.python.org/reference/datamodel.html#object.__eq__
-
-        """
-        return self.label == other.label and self.left == other.left \
-            and self.right == other.right and self.needed == other.needed
-
-    def __hash__(self):
-        """
-        This method is needed in order to ensure that Edges in
-        sets and maps are hashable and can compare unequal.
-
-        See Also
-        --------
-        http://docs.python.org/reference/datamodel.html#object.__hash__
-
-        """
-        return hash((self.label, self.left, self.right, self.needed))
 
    
 
@@ -399,6 +165,8 @@ class Chart(object):
         the grammar to parse against.
     verbose: boolean
         provide more logging if true.
+    using_features: boolean
+        use categories with features on them if true.
 
     Attributes
     ----------
@@ -466,7 +234,9 @@ class Chart(object):
         words = self.setup_words(words)
         final_state = words.final_state
 
-        self.partials = [set() for _ in range(final_state + 1)]
+        
+
+        self.partials =  [set() for _ in range(final_state + 1)]
         self.completes = [set() for _ in range(final_state + 1)]
 
         for i,w,j in words.arcs():
@@ -552,7 +322,6 @@ class Chart(object):
 
         Updates the `agenda` by adding to its end.
 
-        Probabilities, if present, are propagated.
 
         Parameters
         ----------
@@ -601,13 +370,11 @@ class Chart(object):
         """
 
         """
-        if isinstance(rule_category, str) and isinstance(chart_category, str):
-            return rule_category == chart_category
-        elif isinstance(rule_category, icat) and isinstance(chart_category,icat):
-            # check the features, Fail if atomic features conflict
+        if self.using_features:
             return (rule_category.cat == chart_category.cat)  and rule_category.fcheck(chart_category)
         else:
-            raise ValueError((rule_category, chart_category))
+            return rule_category == chart_category
+    
 
     def spawn(self, lc, i):
         """
@@ -631,7 +398,7 @@ class Chart(object):
         --------
         >>> ch = Chart([])
         >>> ch.spawn('Np', 0)
-        >>> ch.agenda[0]
+        >>> sorted(ch.agenda)[0]
         P(Np, 0, 0,('Np', 'Pp'))
 
 
@@ -726,6 +493,43 @@ class Chart(object):
                 return False
         return True
 
+
+    def count(self,e):
+        """
+        Count the trees that are rooted in edge.
+
+        Parameters
+        ==========
+
+        e: Edge
+            the chart entry whose analyses we count.
+
+        Tests
+        =====
+
+        Check that counting of ambiguous parses works as advertised.
+
+        >>> v = parse(('the pigeons are punished and they suffer' + (' and they suffer' * 3)).split(),print_trees=False,use_features=True, return_chart=True)
+        Unknown number of parses
+        >>> sols = v.solutions(icat.from_string('S'))
+        >>> len(sols)
+        1
+        >>> v.count(sols[0])
+        14
+        """
+        prev = self.get_prev(e)
+        if prev:
+            s = 0
+            for c in prev:
+                 for p in self.partials[c.left]:
+                    if  p.left == e.left and self.compatible(p.needed[0], c.label) and self.compatible(p.label,e.label) and\
+                        self.allcompatible(p.needed[1:],e.needed):  
+                            s+= self.count(p) * self.count(c)
+            return s
+        else:
+            return 1
+
+
     def trees(self, e):
         """
         Generate the trees that are rooted in edge.
@@ -738,14 +542,14 @@ class Chart(object):
 
         
         """
-        # import ipdb; ipdb.set_trace()
+    
 
         prev = self.get_prev(e)
         if prev:
             for c in prev:
                 for p in self.partials[c.left]:
-                    if self.compatible(p.needed[0], c.label) and self.compatible(p.label,e.label) and\
-                            p.left == e.left and self.allcompatible(p.needed[1:],e.needed):
+                    if  p.left == e.left and self.compatible(p.needed[0], c.label) and self.compatible(p.label,e.label) and\
+                            self.allcompatible(p.needed[1:],e.needed):
                         for left in self.trees(p):
                             for right in self.trees(c):
                                 yield Tree(e.label,
@@ -822,7 +626,8 @@ def treestring(t, tab=0,sep=' '):
     return s
 
 
-def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_source=LinearWords, use_features=False,show_chart=False):
+def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_source=LinearWords, 
+            use_features=False,show_chart=False,print_trees=True,return_chart=False):
     """
     Print out the parses of a sentence
 
@@ -870,18 +675,31 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
     if show_chart:
         v.show()
         print v.solutions(topcat)
-
-    print sentence
+    if print_trees:
+        print sentence
     i = 0
     sols = v.solutions(topcat)
+
+    
+
     if len(sols) == 0:
         print "No parse"
-    else:
+    elif print_trees:
         for e in sols:
             for tree in v.trees(e):
                 i += 1
-                print "Parse %d:" % i
-                print treestring(tree, tab=0, sep=sep),
+                if print_trees:
+                    print "Parse %d:" % i
+                    print treestring(tree, tab=0, sep=sep),
         print i, "parses"
+    else:
+        # counting trees is exponential.
+        # ntrees = sum([v.count(s) for s in sols])
+        print "Unknown number of","parses"
+
+    if return_chart:
+        return v
+    else:
+        return None
 
 
