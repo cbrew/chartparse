@@ -49,7 +49,7 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
     def less_general(self,e):
 
         """
-        Check edges for strict differences in generality. 
+        Check edges for strict differences in generality. Expected to be called only when features are being used.
 
         >>> e1 = Edge(label=icat.from_string('S(num:pl)'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
         >>> e2 = Edge(label=icat.from_string('S(num:pl)'),left=0,right=2,needed=tuple([icat.from_string('Vp')]),constraints=None)
@@ -75,23 +75,13 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
         >>> e1.less_general(e5)
         False
         """
-        return (not isinstance(e.label, str) and 
-                (e.left == self.left) and (e.right == self.right) and
+        return ((e.left == self.left) and (e.right == self.right) and
                 (self.label != e.label or self.needed != e.needed) and 
                 self.label.leq_general(e.label) and 
                 len(self.needed) == len(e.needed) and
-                self.constraints_leq_general(e) and 
                 all([e1.leq_general(e2) for e1,e2 in zip(self.needed,e.needed)]))
         
-    def constraints_leq_general(self,e):
-        """
-        Check constraints. True if self's constraints are
-        more specific.
-
-        XXX Currently not operational.
-
-        """
-        return True
+ 
 
         
 
@@ -140,13 +130,9 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
         atomic features on cat are copied onto
         the original symbols.
 
+        Is called only when features are being used.
         """
-
-        # non-op if working with comple categories
-        if isinstance(self.label,str):
-            return self
-
-        #     
+     
         cs = self.constraints
         newlabel = self.label.extendc(cs[0], cat)
         # N.B. this is where we cut away the first item in the constraints field.
@@ -159,7 +145,7 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
         
         return self
 
-
+    
     def __repr__(self):
         """
         Produces a textual description of the Edge.
@@ -176,13 +162,14 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
         >>> Edge('dog',0,1,(),None)
         C(dog, 0, 1)
         """
-    
+        
+        # pragma: no cover
         if self.iscomplete():
             template = 'C({label}, {lhs}, {rhs})'
-        elif self.ispartial:
+        else: 
+            assert self.ispartial
             template = 'P({label}, {lhs}, {rhs},{needed})'
-        else:
-            raise ValueError('edge not printable')
+
 
         return template.format(
             label=self.label,
@@ -218,11 +205,7 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
         """
         return other < self #pragma no cover
 
-    def span_length(self):
-        """
-        Return the length of a span, in words.
-        """
-        return self.right - self.left
+
 
     def __eq__(self, other):
         """

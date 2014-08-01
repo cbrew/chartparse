@@ -147,12 +147,6 @@ class LinearWords(object):
 from edges import Edge
 
 
-
-
-   
-
-
-
 class Chart(object):
 
     """An active chart parser.
@@ -333,12 +327,15 @@ class Chart(object):
         """
         for p in partials:
             if self.compatible(e.label,p.needed[0]):
-                hpush(self.agenda,
-                       self.add_prev(Edge(label=p.label, 
+                newedge = Edge(label=p.label, 
                                         left=p.left, 
                                         right=e.right,
                                         needed=p.needed[1:],
-                                        constraints=p.constraints).percolate(e.label), e))
+                                        constraints=p.constraints)
+                if self.using_features:
+                    newedge = newedge.percolate(e.label)
+                hpush(self.agenda,
+                       self.add_prev(newedge, e))
 
     def pairwithcompletes(self, e, completes):
         """
@@ -360,11 +357,13 @@ class Chart(object):
         """
         for c in completes:
             if self.compatible(e.needed[0],c.label):
-                hpush(self.agenda,
-                    self.add_prev(Edge(label=e.label, left=e.left,
+                newedge = Edge(label=e.label, left=e.left,
                                        right=c.right, 
                                        needed=e.needed[1:],
-                                       constraints=e.constraints).percolate(c.label), c))
+                                       constraints=e.constraints)
+                if self.using_features:
+                    newedge = newedge.percolate(c.label)
+                hpush(self.agenda,self.add_prev(newedge, c))
 
     def compatible(self,rule_category, chart_category):
         """
@@ -414,8 +413,7 @@ class Chart(object):
                 if e not in self.partials[e.left]:
                     hpush(self.agenda,e)
 
-    @staticmethod
-    def membership_check(e, previous):
+    def membership_check(self, e, previous):
         """
         Check whether edge or equivalent
         is present. 
@@ -430,6 +428,11 @@ class Chart(object):
         """
         if e in previous:
             return True,previous
+
+        if not self.using_features:
+            return False,previous
+
+
 
         for p in previous:
             if e.less_general(p):
@@ -464,7 +467,7 @@ class Chart(object):
 
         """
         if e.iscomplete():
-            flag,self.completes[e.left] = Chart.membership_check(e, self.completes[e.left])
+            flag,self.completes[e.left] = self.membership_check(e, self.completes[e.left])
             if flag:  # # no new edge needs to be added
                 pass
             else:
@@ -476,7 +479,7 @@ class Chart(object):
                 self.pairwithpartials(self.partials[e.left], e)
         elif e.ispartial():
 
-            flag,self.partials[e.right] = Chart.membership_check(e, self.partials[e.right])
+            flag,self.partials[e.right] = self.membership_check(e, self.partials[e.right])
             if flag: # no new edge needs to be added
                 pass
             else:
