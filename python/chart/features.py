@@ -349,12 +349,19 @@ class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 
 		The constraints are a projection of the lhs and rhs. 
 
+		Caution: the grammar is written in such a way that the
+		lhs may have constraints listed that are not in the rhs.
+		These are to be dropped.
+
+		Happens with S(num) -> S conj S, which is to be interpreted 
+		as S -> S conj S
 
 		"""
 
 		lhsc = ImmutableCategory.constraints(lhs)
 		rhsc = tuple([ImmutableCategory.constraints(r) for r in rhs])
-		keys = lhsc.union(*rhsc)
+
+		keys = frozenset().union(*rhsc)
 		if keys:
 			return (lhsc,rhsc)
 		else:

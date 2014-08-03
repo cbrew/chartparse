@@ -111,6 +111,44 @@ def test_subsumption():
 	>>> sorted(ch.partials[2])[7]
 	P(S(num:pl), 0, 2,(Vp,))
 
+	Next one should have a parse because number agreement is not enforced between different branches of
+	a conjunction.
+
+    >>> v = chart.parse('stuart suffers and they suffer'.split(),return_chart=True,use_features=True,sep='_')
+    ['stuart', 'suffers', 'and', 'they', 'suffer']
+    Parse 1:
+    S
+    _S(num:sing)
+    __Np(num:sing)
+    ___pn(num:sing) stuart
+    __Vp(num:sing)
+    ___v(num:sing,tr:intrans) suffers
+    _conj and
+    _S(num:pl)
+    __Np(case:subj,num:pl)
+    ___pn(case:subj,num:pl) they
+    __Vp(num:pl)
+    ___v(num:pl,tr:intrans) suffer
+    1 parses
+    
+
+    >>> v = chart.parse('stuart suffers and stuart suffers'.split(),return_chart=True,use_features=True,sep='_')
+    ['stuart', 'suffers', 'and', 'stuart', 'suffers']
+    Parse 1:
+    S
+    _S(num:sing)
+    __Np(num:sing)
+    ___pn(num:sing) stuart
+    __Vp(num:sing)
+    ___v(num:sing,tr:intrans) suffers
+    _conj and
+    _S(num:sing)
+    __Np(num:sing)
+    ___pn(num:sing) stuart
+    __Vp(num:sing)
+    ___v(num:sing,tr:intrans) suffers
+    1 parses
+
 	
 
 
