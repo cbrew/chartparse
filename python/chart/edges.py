@@ -142,8 +142,6 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
                     right=self.right,
                     needed=newneeded,
                     constraints= (cs[0],cs[1][1:]))
-        
-        return self
 
     
     def __repr__(self):

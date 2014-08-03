@@ -546,14 +546,14 @@ class Chart(object):
 
     def countable(self,pairs):
         for (e1,e2) in pairs:
-            if (e1 not in self.count) or (e2 not in self.count):
+            if (e1 not in self._count) or (e2 not in self._count):
                 return False
         return True
 
     def do_count(self,pairs):
         s = 0
         for (e1,e2) in pairs:
-            s += self.count[e1] * self.count[e2]
+            s += self._count[e1] * self._count[e2]
 
         return max(s,1)        
 
@@ -562,12 +562,12 @@ class Chart(object):
             return 1
         self.match_edges()
 
-        self.count = defaultdict(unity)
+        self._count = defaultdict(unity)
         while True:
             changed = False
             for e,pairs in self.matched.items():
-                if e not in self.count and self.countable(pairs):
-                    self.count[e] = self.do_count(pairs)
+                if e not in self._count and self.countable(pairs):
+                    self._count[e] = self.do_count(pairs)
                     changed = True
             if not changed:
                 break
@@ -770,6 +770,16 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
      ['the', 'pigeons', 'are', 'punished', 'and', 'they', 'blink']
      No parse
 
+    >>> print treestring(list(parse(["the","pigeons","suffer"],return_trees=True))[0],sep='_')
+    ['the', 'pigeons', 'suffer']
+    S
+    _Np
+    __det the
+    __Nn
+    ___n pigeons
+    _Vp
+    __v suffer
+    <BLANKLINE>
     """
     if use_features:
         grammar = features.make_feature_grammar()
@@ -786,6 +796,7 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
     i = 0
     sols = v.solutions(topcat)
 
+    v.bu_count()
     if return_trees:
         return frozenset().union(*[v.trees(sol) for sol in sols])
 
@@ -827,14 +838,25 @@ def check_chart(v):
 def edge_summary(v):
     """
     Summarize the contents of the chart. 
-
+    >>> v = parse(["the","pigeons","suffer"],return_chart=True)
+    ['the', 'pigeons', 'suffer']
+    Parse 1:
+    S
+     Np
+      det the
+      Nn
+       n pigeons
+     Vp
+      v suffer
+    1 parses
+    >>> edge_summary(v)
+    {'partials': 31, 'completes': 12}
     """
     ps = set().union(*v.partials)
     cs = set().union(*v.completes)
     for p in ps:
         if p not in v.prev:
             v.prev[p] = set()
-
     ps_no_pred = {p for p in ps if p not in v.prev}
 
     cs_no_pred = {p for p in cs if p not in v.prev}
@@ -845,46 +867,6 @@ def edge_summary(v):
 
 
 
-def count_chart(v):
-    ps = set().union(*v.partials)
-    cs = set().union(*v.completes)
-    how_made = {e:v.find_partial_prev(e) for e in (cs|ps)}
-    return how_made
-
-
-def allcountable(ps,counted):
-    for e1,e2 in ps:
-        if (e1 not in counted) or (e2 not in counted):
-            return False
-    return True
-
-def allcount(ps,counted):
-    if len(ps) == 0:
-        return 1
-    else:
-        s = 0
-        for e1,e2 in ps:
-            s += counted[e1] * counted[e2]
-        return s
-
-def partcounts(v,counted):
-    return [(counted[e1],counted[e2]) for e1,e2 in v]
-
-
-def countable(m,counted=None):
-    m = dict(m.items())
-    if counted is None:
-        counted = {}
-    for k,v in m.items():
-        assert k not in counted
-        if allcountable(v,counted):
-            counted[k] = allcount(v,counted)
-            print k,allcount(v,counted),v,partcounts(v,counted)
-            del m[k]
-    if len(m) == 0:
-        return counted
-    else:
-        return countable(m,counted)
 
 
 

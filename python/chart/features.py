@@ -209,13 +209,13 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 		False
 		>>> c2.less_general(c2)
 		False
+		>>> 
 
 
 
 		"""
 		if self.cat != c.cat:
 			return False
-
 		elif self.features is None:
 			# there are no features on self, so
 			# it cannot be more specific.
@@ -336,7 +336,7 @@ class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 	
 	"""
 	def __repr__(self):
-		if len(self.constraints) == 0:
+		if self.constraints is None or len(self.constraints) == 0:
 			return "{lhs} -> {rhs}".format(lhs=self.lhs,rhs=" ".join(map(str,self.rhs)))
 		else:
 			return "{lhs} -> {rhs} {cs}".format(cs=self.constraint_strings,lhs=self.lhs,rhs=" ".join(map(str,self.rhs)))
@@ -356,16 +356,25 @@ class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 		Happens with S(num) -> S conj S, which is to be interpreted 
 		as S -> S conj S
 
+		>>> r=ImmutableRule('S(num)','S conj S'.split())
+		>>> r
+		S -> S conj S
+		>>> (r.lhs,r.rhs,r.constraints)
+		(S, (S, conj, S), None)
+		>>> r=ImmutableRule('S(num)','NP(num,case:subj) VP(num)'.split())
+		>>> (r.lhs,r.rhs,r.constraints)
+		(S, (NP(case:subj), VP), (frozenset(['num']), (frozenset(['num']), frozenset(['num']))))
 		"""
 
 		lhsc = ImmutableCategory.constraints(lhs)
 		rhsc = tuple([ImmutableCategory.constraints(r) for r in rhs])
 
-		
+		keysa = Counter((x for c in ([lhsc] + [r for r in rhsc]) for x in c))
+		keys2 = {k for k in keysa if keysa[k] > 1}
 
 
-		keys = set().union(*rhsc)
-		if keys:
+		# keys = set().union(*rhsc)
+		if keys2:
 			return (lhsc,rhsc)
 		else:
 			return None
@@ -403,7 +412,7 @@ def string_pairs_from_rules(spec):
 
 def grammar_from_string_pairs(string_pairs):
 		"""
-		expand a grammar from 
+		expand a grammar from pairs of strings,
 		"""
 		return [ImmutableRule(x,y) for x,y in string_pairs]
 
