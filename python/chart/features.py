@@ -109,7 +109,7 @@ feature specifications of two types:
 
 """
 import chart
-from collections import namedtuple
+from collections import namedtuple,Counter
 import re
 import english
 import numpy.random as npr
@@ -361,7 +361,10 @@ class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 		lhsc = ImmutableCategory.constraints(lhs)
 		rhsc = tuple([ImmutableCategory.constraints(r) for r in rhs])
 
-		keys = frozenset().union(*rhsc)
+		
+
+
+		keys = set().union(*rhsc)
 		if keys:
 			return (lhsc,rhsc)
 		else:

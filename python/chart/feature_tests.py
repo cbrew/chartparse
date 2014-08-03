@@ -20,6 +20,16 @@ we should not do so, since that is duplicative. Equally, when we
 add ``det(num:sing)``, then propose adding ``det``, we should 
 replace the less general with the more general.
 
+We also want to make sure that feature percolation works as 
+expected. The intention is that a feature name mentioned
+in more than one place in a rule will result in propagation
+of any feature value found, both from a child node to any
+labeled later siblings and from child node to the parent, if 
+the parent is labeled. We never propagate from later siblings
+to earlier siblings, because chart parsing is built on the 
+assumption that nodes will not become more specific after they
+are entered into the chart.
+
 """
 
 import chart
@@ -131,6 +141,7 @@ def test_subsumption():
     ___v(num:pl,tr:intrans) suffer
     1 parses
     
+    This one should have no number features on the conjoined S.
 
     >>> v = chart.parse('stuart suffers and stuart suffers'.split(),return_chart=True,use_features=True,sep='_')
     ['stuart', 'suffers', 'and', 'stuart', 'suffers']
