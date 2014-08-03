@@ -535,6 +535,9 @@ class Chart(object):
         >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 4)).split(),return_chart=True, print_trees=False)
         >>> v.trace_edges()
         14
+        >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 5)).split(),return_chart=True, print_trees=False)
+        >>> v.trace_edges()
+        42
         """
         if sol is None:
             self._traced = dict()
@@ -561,53 +564,6 @@ class Chart(object):
                     self._traced[sol] += self._traced[e]*self._traced[probe]
             else:
                 self._traced[sol] = 1
-        
-
-
-    
-    def match_edges(self):
-        self.matched = defaultdict(set)
-        for edge,succ in self.prev.items():
-            if succ:
-                for s in succ:
-                    probe = Edge(label=edge.label,
-                                left=edge.left,
-                                right=s.left,
-                                needed = (s.label,) + edge.needed,
-                                constraints=edge.constraints)
-                    probe = self.find(probe)
-                    assert probe,(edge,s)
-                    self.matched[edge].add((probe,s))
-            else:
-                self.matched[edge] = succ
-
-    def countable(self,pairs):
-        for (e1,e2) in pairs:
-            if (e1 not in self._count) or (e2 not in self._count):
-                return False
-        return True
-
-    def do_count(self,pairs):
-        s = 0
-        for (e1,e2) in pairs:
-            s += self._count[e1] * self._count[e2]
-
-        return max(s,1)        
-
-    def bu_count(self):
-        def unity():
-            return 1
-        self.match_edges()
-
-        self._count = defaultdict(unity)
-        while True:
-            changed = False
-            for e,pairs in self.matched.items():
-                if e not in self._count and self.countable(pairs):
-                    self._count[e] = self.do_count(pairs)
-                    changed = True
-            if not changed:
-                break
 
 
 
@@ -698,11 +654,12 @@ class Chart(object):
         else:
             yield Tree(e.label)
 
-    def results(self, show_chart=False,**kwds):
+    def results(self, show_chart=False,trace_edges=False,**kwds):
         """
         Code for creating results.
         """
         return dict(sols=self.solutions(self.topcat),
+                    n_trees=self.trace_edges(),
                     topcat=self.topcat)
         
 
@@ -777,6 +734,7 @@ def treestring(t, tab=0,sep=' '):
 
 def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_source=LinearWords, 
             use_features=False,show_chart=False,print_trees=True,return_chart=False,
+            trace_edges=True,
             return_trees = False):
     """
     Print out the parses of a sentence
@@ -834,7 +792,11 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
     v.topcat = topcat
     sols = v.solutions(topcat)
 
-    res = v.results(show_chart=show_chart,print_trees=print_trees, return_trees=return_trees, return_chart=return_chart)
+    res = v.results(show_chart=show_chart,
+                    print_trees=print_trees, 
+                    return_trees=return_trees,
+                    trace_edges=trace_edges,
+                    return_chart=return_chart)
 
     silent = not (print_trees or show_chart)
     if not silent:
