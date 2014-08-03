@@ -5,7 +5,8 @@ It uses the active chart datastructure. The design is based
 on Steve Isard's LIB CHART, a teaching tool (written in 1983) that
 comes with the wonderful Poplog AI development environment.
 
-This has been adjusted to work with a lattice of input possibilities.
+This has been adjusted to work with a lattice of input possibilities,
+and to have a simple feature system.
 
 
 References
@@ -105,8 +106,9 @@ from english import GRAMMAR
 import features
 import english
 from features import ImmutableCategory as icat
+import operator
 
-
+'''
 def hpush(heap,item):
     """
     Simple list based alternative to heapq.heappop()
@@ -118,7 +120,13 @@ def hpop(heap):
     Simple list based alternative to heapq.heappop()
     """
     return heap.pop()
+'''
 
+from heapq import heappop as hpop
+from heapq import heappush as hpush
+
+Or = namedtuple('Or',("disjuncts",))
+And = namedtuple('And',('left','right'))
 
 class LinearWords(object):
     """
@@ -188,8 +196,13 @@ class Chart(object):
         self.verbose = verbose
         self.grammar = grammar.grammar
         self.prev = defaultdict(set)
+        self.countdict = defaultdict(int)
         self.agenda = []
         self.seed_agenda(words)
+        if self.using_features:
+            self.compat = self.compatible
+        else:
+            self.compat = operator.eq
         
         if run:
             while self.agenda:
@@ -266,8 +279,10 @@ class Chart(object):
         solutions:list<Edge>
         
         """
+      
+
         return [e for e in self.completes[0] if
-                e.right == len(self.completes) - 1 and self.compatible(topCat,e.label)]
+                e.right == len(self.completes) - 1 and self.compat(topCat,e.label)]
 
     def add_prev(self, e, c):
         """
@@ -326,7 +341,7 @@ class Chart(object):
 
         """
         for p in partials:
-            if self.compatible(e.label,p.needed[0]):
+            if self.compat(e.label,p.needed[0]):
                 newedge = Edge(label=p.label, 
                                         left=p.left, 
                                         right=e.right,
@@ -355,8 +370,11 @@ class Chart(object):
         :param e: The partial edge that should be completed.
 
         """
+        
+
+
         for c in completes:
-            if self.compatible(e.needed[0],c.label):
+            if self.compat(e.needed[0],c.label):
                 newedge = Edge(label=e.label, left=e.left,
                                        right=c.right, 
                                        needed=e.needed[1:],
@@ -367,12 +385,10 @@ class Chart(object):
 
     def compatible(self,rule_category, chart_category):
         """
-
+        Compatibility check.  Called only when features used.
         """
-        if self.using_features:
-            return (rule_category.cat == chart_category.cat)  and rule_category.fcheck(chart_category)
-        else:
-            return rule_category == chart_category
+        return (rule_category.cat == chart_category.cat)  and rule_category.fcheck(chart_category)
+        
     
 
     def spawn(self, lc, i):
@@ -405,13 +421,27 @@ class Chart(object):
         for rule in self.grammar:
             lhs = rule.lhs
             rhs = rule.rhs
-            if self.compatible(rhs[0], lc):
+            if self.compat(rhs[0], lc):
                 e = Edge(label=lhs, left=i, right=i,
                          needed=tuple(rhs),
                          constraints=rule.constraints
                          )
-                if e not in self.partials[e.left]:
+                if e not in self.somepartials(right=e.left):
+                    self.prev[e] = set()
                     hpush(self.agenda,e)
+
+    def find(self,e):
+        if e.iscomplete():
+            edges = self.completes[e.left]
+        else:
+            edges = self.partials[e.right]
+
+        # there will be zero or one edge in the chart that satisfies
+        # the criteria...
+        for edge in edges:
+            if edge.left == e.left and edge.right == e.right  and self.compat(edge.label,e.label) and self.allcompatible(edge.needed, e.needed):
+                    return edge
+
 
     def membership_check(self, e, previous):
         """
@@ -424,7 +454,8 @@ class Chart(object):
         2) edge is entirely absent: return False and original set.
         3) edge is less general than one in the set, return True and original set
         4) edge is more general than one in the set, return True and modified set
-           that replaces the more specific with the new edge  
+           that replaces the more specific with the new edge.
+
         """
         if e in previous:
             return True,previous
@@ -468,7 +499,7 @@ class Chart(object):
         """
         if e.iscomplete():
             flag,self.completes[e.left] = self.membership_check(e, self.completes[e.left])
-            if flag:  # # no new edge needs to be added
+            if flag:  # no new edge needs to be added
                 pass
             else:
                 self.completes[e.left].add(e)
@@ -476,7 +507,7 @@ class Chart(object):
                 # will immedidately combine with e
                 # so we could make the result directly.
                 self.spawn(e.label, e.left)
-                self.pairwithpartials(self.partials[e.left], e)
+                self.pairwithpartials(self.somepartials(right=e.left), e)
         elif e.ispartial():
 
             flag,self.partials[e.right] = self.membership_check(e, self.partials[e.right])
@@ -492,9 +523,55 @@ class Chart(object):
         if len(cs1) != len(cs2):
             return False
         for c1,c2 in zip(cs1,cs2):
-            if not self.compatible(c1,c2):
+            if not self.compat(c1,c2):
                 return False
         return True
+
+    
+    def match_edges(self):
+        self.matched = defaultdict(set)
+        for edge,succ in self.prev.viewitems():
+            if succ:
+                for s in succ:
+                    probe = Edge(label=edge.label,
+                                left=edge.left,
+                                right=s.left,
+                                needed = (s.label,) + edge.needed,
+                                constraints=edge.constraints)
+                    probe = self.find(probe)
+                    assert probe,(edge,s)
+                    self.matched[edge].add((probe,s))
+            else:
+                self.matched[edge] = succ
+
+    def countable(self,pairs):
+        for (e1,e2) in pairs:
+            if (e1 not in self.count) or (e2 not in self.count):
+                return False
+        return True
+
+    def do_count(self,pairs):
+        s = 0
+        for (e1,e2) in pairs:
+            s += self.count[e1] * self.count[e2]
+
+        return max(s,1)        
+
+    def bu_count(self):
+        def unity():
+            return 1
+        self.match_edges()
+
+        self.count = defaultdict(unity)
+        while True:
+            changed = False
+            for e,pairs in self.matched.items():
+                if e not in self.count and self.countable(pairs):
+                    self.count[e] = self.do_count(pairs)
+                    changed = True
+            if not changed:
+                break
+
 
 
     def count(self,e):
@@ -519,19 +596,47 @@ class Chart(object):
         1
         >>> v.count(sols[0])
         14
+
+
         """
         prev = self.get_prev(e)
         if prev:
             s = 0
             for c in prev:
-                 for p in self.partials[c.left]:
-                    if  p.left == e.left and self.compatible(p.needed[0], c.label) and self.compatible(p.label,e.label) and\
-                        self.allcompatible(p.needed[1:],e.needed):  
+                for p in self.somepartials(right=c.left,left=e.left,label=e.label,first=c.label,rest=e.needed):
                             s+= self.count(p) * self.count(c)
             return s
         else:
             return 1
 
+    def counted_tree(self,e):
+        ps = self.find_partial_prev(e)
+        if len(ps) == 0:
+            return e
+        else:
+            return Or([And(self.counted_tree(p[0]),self.counted_tree(p[1]))
+                    for p in ps])
+
+  
+
+    def somepartials(self,right=None,left=None,label=None,first=None,rest=None):
+        """
+        Accessor that gets a set of relevant partials.
+        """
+
+        if right is not None:
+            r = self.partials[right]
+        else:
+            r = set().union(*self.partials)
+        if left is not None:
+            r = {e for e in r if e.left==left}
+        if label is not None:
+            r = {e for e in r if self.compat(e.label,label)}
+        if first is not None:
+            r = {e for e in r if self.compat(e.needed[0],first)}
+        if rest is not None:
+             r = {e for e in r if self.allcompatible(e.needed[1:],rest)}
+        return frozenset(r)
 
     def trees(self, e):
         """
@@ -550,13 +655,10 @@ class Chart(object):
         prev = self.get_prev(e)
         if prev:
             for c in prev:
-                for p in self.partials[c.left]:
-                    if  p.left == e.left and self.compatible(p.needed[0], c.label) and self.compatible(p.label,e.label) and\
-                            self.allcompatible(p.needed[1:],e.needed):
-                        for left in self.trees(p):
-                            for right in self.trees(c):
-                                yield Tree(e.label,
-                                           left.children + tuple([right]))
+                for p in self.somepartials(right=c.left,left=e.left,label=e.label,first=c.label,rest=e.needed):
+                   for left in self.trees(p):
+                        for right in self.trees(c):
+                            yield Tree(e.label,left.children + tuple([right]))
         else:
             yield Tree(e.label)
 
@@ -630,7 +732,8 @@ def treestring(t, tab=0,sep=' '):
 
 
 def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_source=LinearWords, 
-            use_features=False,show_chart=False,print_trees=True,return_chart=False):
+            use_features=False,show_chart=False,print_trees=True,return_chart=False,
+            return_trees = False):
     """
     Print out the parses of a sentence
 
@@ -683,7 +786,8 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
     i = 0
     sols = v.solutions(topcat)
 
-    
+    if return_trees:
+        return frozenset().union(*[v.trees(sol) for sol in sols])
 
     if len(sols) == 0:
         print "No parse"
@@ -704,5 +808,90 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
         return v
     else:
         return None
+
+
+def check_chart(v):
+    """
+    Do a post-check on the edges of a chart. Every edge that is created from the fundamental rule has some 
+    complete predecessors.
+    """
+    for i in range(len(v.completes)):
+        for e in sorted(v.completes[i]):
+            fp = v.find_partial_prev(e)
+            yield i,e,fp
+    for i in range(len(v.partials)):
+        for e in sorted(v.partials[i]):
+           fp = v.find_partial_prev(e)
+           yield i,e,fp
+
+def edge_summary(v):
+    """
+    Summarize the contents of the chart. 
+
+    """
+    ps = set().union(*v.partials)
+    cs = set().union(*v.completes)
+    for p in ps:
+        if p not in v.prev:
+            v.prev[p] = set()
+
+    ps_no_pred = {p for p in ps if p not in v.prev}
+
+    cs_no_pred = {p for p in cs if p not in v.prev}
+    assert len(cs_no_pred) == 0
+    assert len(ps_no_pred) == 0
+    return dict(partials= len(ps),completes=len(cs))
+    
+
+
+
+def count_chart(v):
+    ps = set().union(*v.partials)
+    cs = set().union(*v.completes)
+    how_made = {e:v.find_partial_prev(e) for e in (cs|ps)}
+    return how_made
+
+
+def allcountable(ps,counted):
+    for e1,e2 in ps:
+        if (e1 not in counted) or (e2 not in counted):
+            return False
+    return True
+
+def allcount(ps,counted):
+    if len(ps) == 0:
+        return 1
+    else:
+        s = 0
+        for e1,e2 in ps:
+            s += counted[e1] * counted[e2]
+        return s
+
+def partcounts(v,counted):
+    return [(counted[e1],counted[e2]) for e1,e2 in v]
+
+
+def countable(m,counted=None):
+    m = dict(m.items())
+    if counted is None:
+        counted = {}
+    for k,v in m.items():
+        assert k not in counted
+        if allcountable(v,counted):
+            counted[k] = allcount(v,counted)
+            print k,allcount(v,counted),v,partcounts(v,counted)
+            del m[k]
+    if len(m) == 0:
+        return counted
+    else:
+        return countable(m,counted)
+
+
+
+
+    
+      
+    
+
 
 

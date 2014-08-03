@@ -436,10 +436,21 @@ def compile_lexicon(spec):
 		for cat in cats:
 			yield ImmutableRule(lhs=cat,rhs=[key])
 
+import networkx as nx
+
 class Grammar:
 	def __init__(self, rules, state=None):
 		self.state = (npr.RandomState(42) if state is None else state)
 		self.grammar = rules
+		self.left_corner = self._make_left_corner()
+	def _make_left_corner(self):
+		g = nx.DiGraph()
+		for r in self.grammar:
+			g.add_edge(r.lhs,r.rhs[0])
+		return nx.freeze(g)
+
+
+
 
 def make_feature_grammar():
 	return Grammar(list(compile_grammar(english.RULES)) + list(compile_lexicon(english.WORDS)))
