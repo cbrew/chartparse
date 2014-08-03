@@ -527,10 +527,47 @@ class Chart(object):
                 return False
         return True
 
+    def trace_edges(self,sol=None):
+        """
+        Recursive procedure to find counts
+        of edges.
+
+        >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 4)).split(),return_chart=True, print_trees=False)
+        >>> v.trace_edges()
+        14
+        """
+        if sol is None:
+            self._traced = dict()
+            s = 0
+            for sol in self.solutions(self.topcat):
+                self.trace_edges(sol=sol)
+                s += self._traced[sol]
+            return s
+        elif sol in self._traced:
+            pass
+        else:
+            ps = self.prev[sol]
+            if ps:
+                self._traced[sol] = 0
+                for e in self.prev[sol]:
+                    probe = Edge(label=sol.label,
+                                left=sol.left,
+                                right=e.left,
+                                needed = (e.label,) + sol.needed,
+                                constraints=sol.constraints)
+                    probe = self.find(probe)
+                    self.trace_edges(probe)
+                    self.trace_edges(sol=e)
+                    self._traced[sol] += self._traced[e]*self._traced[probe]
+            else:
+                self._traced[sol] = 1
+        
+
+
     
     def match_edges(self):
         self.matched = defaultdict(set)
-        for edge,succ in self.prev.viewitems():
+        for edge,succ in self.prev.items():
             if succ:
                 for s in succ:
                     probe = Edge(label=edge.label,
@@ -589,13 +626,7 @@ class Chart(object):
 
         Check that counting of ambiguous parses works as advertised.
 
-        >>> v = parse(('the pigeons are punished and they suffer' + (' and they suffer' * 3)).split(),print_trees=False,use_features=True, return_chart=True)
-        Unknown number of parses
-        >>> sols = v.solutions(icat.from_string('S'))
-        >>> len(sols)
-        1
-        >>> v.count(sols[0])
-        14
+        
 
 
         """
@@ -609,13 +640,7 @@ class Chart(object):
         else:
             return 1
 
-    def counted_tree(self,e):
-        ps = self.find_partial_prev(e)
-        if len(ps) == 0:
-            return e
-        else:
-            return Or([And(self.counted_tree(p[0]),self.counted_tree(p[1]))
-                    for p in ps])
+
 
   
 
@@ -648,7 +673,18 @@ class Chart(object):
         e: Edge
             the chart entry whose daughters we trace.
 
-        
+        This is an iterator, and can unpack the first few of even very
+        ambiguous parse forests. The following is too costly to run as 
+        a doctest, but does work.
+
+        from math import log10
+        v = chart.parse(('the pigeons are punished' + ( ' and they suffer' * 152)).split(),return_chart=True, 
+                print_trees=False,show_chart=False)
+        print log10(v.trace_edges())
+        87.98857337128997
+        ts = v.trees(v.solutions(v.topcat)[0])
+        print len((treestring(ts.next()))
+        16522
         """
     
 
@@ -661,6 +697,14 @@ class Chart(object):
                             yield Tree(e.label,left.children + tuple([right]))
         else:
             yield Tree(e.label)
+
+    def results(self, show_chart=False,**kwds):
+        """
+        Code for creating results.
+        """
+        return dict(sols=self.solutions(self.topcat),
+                    topcat=self.topcat)
+        
 
 
 
@@ -787,16 +831,22 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
 
 
     v = Chart(sentence, verbose=verbose,grammar=grammar,input_source=input_source, using_features=use_features)
+    v.topcat = topcat
+    sols = v.solutions(topcat)
+
+    res = v.results(show_chart=show_chart,print_trees=print_trees, return_trees=return_trees, return_chart=return_chart)
+
+    silent = not (print_trees or show_chart)
+    if not silent:
+        print sentence
 
     if show_chart:
         v.show()
         print v.solutions(topcat)
-    if print_trees:
-        print sentence
     i = 0
-    sols = v.solutions(topcat)
 
-    v.bu_count()
+   
+    
     if return_trees:
         return frozenset().union(*[v.trees(sol) for sol in sols])
 
@@ -812,8 +862,8 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
         print i, "parses"
     else:
         # counting trees is exponential.
-        # ntrees = sum([v.count(s) for s in sols])
-        print "Unknown number of","parses"
+        # ntrees = sum([v._count(s) for s in sols])
+        pass
 
     if return_chart:
         return v

@@ -35,6 +35,32 @@ are entered into the chart.
 import chart
 from features import ImmutableCategory as icat
 from features import make_feature_grammar
+import time
+
+
+def too_expensive(): # pragma:no cover
+	 from math import log10
+	 sentence = ('the pigeons are punished' + ( ' and they suffer' * 152)).split()
+	 print 'sentence of length',len(sentence)
+	 start = time.clock()
+	 v = chart.parse(sentence,return_chart=True, 
+                		print_trees=False,show_chart=False)
+	 end = time.clock()
+	 print "Took",(end - start),"seconds"
+	 print "Counting trees"
+	 start = time.clock()
+	 print "Log of number of trees",log10(v.trace_edges())
+	 end = time.clock()
+	 print "Took",(end - start),"seconds"
+	 print 'By best estimate this is many more trees than there are atoms in the universe'
+	 ts = v.trees(v.solutions(v.topcat)[0])
+	 tree = chart.treestring(ts.next())
+	 print 'First tree has length',len(tree),'characters'
+	 print tree[:40],'...\n',tree[10000:10100],'...\n',tree[-80:]
+	 for i in range(199):
+	 	tree = chart.treestring(ts.next())
+	 print '200th tree has length',len(tree),'characters'
+	 print tree[:40],'...\n',tree[10000:10100],'...\n',tree[-80:]
 
 def test_subsumption():
 	"""
