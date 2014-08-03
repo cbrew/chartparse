@@ -833,20 +833,6 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
         return None
 
 
-def check_chart(v):
-    """
-    Do a post-check on the edges of a chart. Every edge that is created from the fundamental rule has some 
-    complete predecessors.
-    """
-    for i in range(len(v.completes)):
-        for e in sorted(v.completes[i]):
-            fp = v.find_partial_prev(e)
-            yield i,e,fp
-    for i in range(len(v.partials)):
-        for e in sorted(v.partials[i]):
-           fp = v.find_partial_prev(e)
-           yield i,e,fp
-
 def edge_summary(v):
     """
     Summarize the contents of the chart. 
@@ -866,9 +852,6 @@ def edge_summary(v):
     """
     ps = set().union(*v.partials)
     cs = set().union(*v.completes)
-    for p in ps:
-        if p not in v.prev:
-            v.prev[p] = set()
     ps_no_pred = {p for p in ps if p not in v.prev}
 
     cs_no_pred = {p for p in cs if p not in v.prev}
