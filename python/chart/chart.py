@@ -99,34 +99,33 @@ S
 
 
 from collections import defaultdict, namedtuple
-# from heapq import heappush as hpush
-# from heapq import heappop as hpop
-
 from english import GRAMMAR
 import features
 import english
 from features import ImmutableCategory as icat
 import operator
 
-'''
+
 def hpush(heap,item):
     """
     Simple list based alternative to heapq.heappop()
+    Reduces need for comparisons in agenda. Much
+    faster, and all current tests pass.
     """
     heap.append(item)
 
 def hpop(heap):
     """
-    Simple list based alternative to heapq.heappop()
+    Simple list based alternative to heapq.heappop().
+    Reduces need for comparisons in agenda. Much
+    faster, and all current tests pass.
     """
     return heap.pop()
-'''
 
-from heapq import heappop as hpop
-from heapq import heappush as hpush
 
-Or = namedtuple('Or',("disjuncts",))
-And = namedtuple('And',('left','right'))
+# from heapq import heappop as hpop
+# from heapq import heappush as hpush
+
 
 class LinearWords(object):
     """
@@ -265,7 +264,7 @@ class Chart(object):
         """
         return Edge(label=word, left=i, right=j, needed=(),constraints=None)
 
-    def solutions(self, topCat):
+    def solutions(self, topCat,n=None):
         """
         Find the solutions rooted in `topCat`
 
@@ -279,10 +278,12 @@ class Chart(object):
         solutions:list<Edge>
         
         """
-      
-
-        return [e for e in self.completes[0] if
+        r = [e for e in self.completes[0] if
                 e.right == len(self.completes) - 1 and self.compat(topCat,e.label)]
+        if n is not None:
+            return r[n]
+        else:
+            return r
 
     def add_prev(self, e, c):
         """
@@ -385,7 +386,7 @@ class Chart(object):
 
     def compatible(self,rule_category, chart_category):
         """
-        Compatibility check.  Called only when features used.
+        Compatibility check.  Called only when features are being used.
         """
         return (rule_category.cat == chart_category.cat)  and rule_category.fcheck(chart_category)
         
@@ -580,21 +581,46 @@ class Chart(object):
         Tests
         =====
 
-        Check that counting of ambiguous parses works as advertised.
+        Check that counting of ambiguous parses works as advertised. Numbers are, as theory dictates
+        from the Catalan series, which grows very fast.
+
+        >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 0)).split(), use_features=True, print_trees=False, return_chart=True)
+        >>> v.count(v.solutions(v.topcat,0))
+        1
+
+        >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 1)).split(), use_features=True, print_trees=False, return_chart=True)
+        >>> v.count(v.solutions(v.topcat,0))
+        1
+
+        >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 2)).split(), use_features=True, print_trees=False, return_chart=True)
+        >>> v.count(v.solutions(v.topcat,0))
+        2
 
         
+        >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 3)).split(), use_features=True, print_trees=False, return_chart=True)
+        >>> v.count(v.solutions(v.topcat,0))
+        5
 
+        >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 4)).split(), use_features=True, print_trees=False, return_chart=True)
+        >>> v.count(v.solutions(v.topcat,0))
+        14
+
+        >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 5)).split(), use_features=True, print_trees=False, return_chart=True)
+        >>> v.count(v.solutions(v.topcat,0))
+        42
+
+        >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 6)).split(), use_features=True, print_trees=False, return_chart=True)
+        >>> v.count(v.solutions(v.topcat,0))
+        132
+
+        >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 7)).split(), use_features=True, print_trees=False, return_chart=True)
+        >>> v.count(v.solutions(v.topcat,0))
+        429
 
         """
-        prev = self.get_prev(e)
-        if prev:
-            s = 0
-            for c in prev:
-                for p in self.somepartials(right=c.left,left=e.left,label=e.label,first=c.label,rest=e.needed):
-                            s+= self.count(p) * self.count(c)
-            return s
-        else:
-            return 1
+        if not hasattr(self,'_traced'):
+            self.trace_edges()
+        return self._traced[e]
 
 
 
@@ -685,6 +711,15 @@ class Tree(object):
     def __init__(self, parent, children=()):
         self.parent = parent
         self.children = children
+    def __str__(self):
+        """
+        >>> print Tree("S",[Tree("NP"),Tree("VP")])
+        S
+         NP
+         VP
+        <BLANKLINE>
+        """
+        return treestring(self)
     
 
 
@@ -772,16 +807,6 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
      ['the', 'pigeons', 'are', 'punished', 'and', 'they', 'blink']
      No parse
 
-    >>> print treestring(list(parse(["the","pigeons","suffer"],return_trees=True))[0],sep='_')
-    ['the', 'pigeons', 'suffer']
-    S
-    _Np
-    __det the
-    __Nn
-    ___n pigeons
-    _Vp
-    __v suffer
-    <BLANKLINE>
     """
     if use_features:
         grammar = features.make_feature_grammar()
@@ -794,9 +819,9 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
 
     res = v.results(show_chart=show_chart,
                     print_trees=print_trees, 
-                    return_trees=return_trees,
-                    trace_edges=trace_edges,
-                    return_chart=return_chart)
+                    trace_edges=trace_edges)
+
+
 
     silent = not (print_trees or show_chart)
     if not silent:
@@ -804,28 +829,21 @@ def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_so
 
     if show_chart:
         v.show()
-        print v.solutions(topcat)
-    i = 0
 
-   
-    
-    if return_trees:
-        return frozenset().union(*[v.trees(sol) for sol in sols])
-
-    if len(sols) == 0:
-        print "No parse"
-    elif print_trees:
+    if print_trees:
+        i = 0
         for e in sols:
             for tree in v.trees(e):
                 i += 1
                 if print_trees:
                     print "Parse %d:" % i
                     print treestring(tree, tab=0, sep=sep),
-        print i, "parses"
-    else:
-        # counting trees is exponential.
-        # ntrees = sum([v._count(s) for s in sols])
-        pass
+
+    if not silent:
+        if res['n_trees'] == 0:
+            print "No parse"
+        else:
+            print res['n_trees'], "parses"
 
     if return_chart:
         return v

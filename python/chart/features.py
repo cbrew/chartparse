@@ -308,14 +308,6 @@ class ImmutableCategory(namedtuple("ImmutableCategory",("cat","features"))):
 		ff1 = c1.features
 		ff2 = c2.features
 
-
-
-		# if not ff1 or not ff2:
-		#	return True
-
-		
-
-
 		# Use the symmetric difference operator
 		# to find the feature/value pairs 
 		# that are not shared
@@ -370,12 +362,13 @@ class ImmutableRule(namedtuple('ImmutableRule',('lhs','rhs',"constraints"))):
 		rhsc = tuple([ImmutableCategory.constraints(r) for r in rhs])
 
 		keysa = Counter((x for c in ([lhsc] + [r for r in rhsc]) for x in c))
-		keys2 = {k for k in keysa if keysa[k] > 1}
+		keys = frozenset((k for k in keysa if keysa[k] > 1))
 
-
-		# keys = set().union(*rhsc)
-		if keys2:
-			return (lhsc,rhsc)
+		
+		if keys:
+			# make sure that only the allowed keys are present 
+			return (keys.intersection(lhsc),
+					tuple((keys.intersection(r) for r in rhsc)))
 		else:
 			return None
 
