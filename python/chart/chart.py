@@ -104,6 +104,8 @@ import features
 import english
 from features import ImmutableCategory as icat
 import operator
+import itertools
+import heapq
 
 
 def hpush(heap,item):
@@ -121,6 +123,7 @@ def hpop(heap):
     faster, and all current tests pass.
     """
     return heap.pop()
+
 
 
 # from heapq import heappop as hpop
@@ -152,6 +155,9 @@ class LinearWords(object):
             yield i,w , i+1
 
 from edges import Edge
+
+
+
 
 
 class Chart(object):
@@ -186,7 +192,12 @@ class Chart(object):
 
     """
 
-    def __init__(self, words, grammar=GRAMMAR, verbose=False, input_source=LinearWords, run=True, using_features=False):
+    def __init__(self, words, 
+                    grammar=GRAMMAR, 
+                    verbose=False, 
+                    input_source=LinearWords, 
+                    run=True, 
+                    using_features=False):
         """
         Create and run the parser.
         """
@@ -528,23 +539,35 @@ class Chart(object):
                 return False
         return True
 
-    def trace_edges(self,sol=None):
+
+
+
+   
+
+
+
+
+
+
+    def count_edges(self,sol=None):
         """
-        Recursive procedure to find counts
-        of edges.
+        Recursive (memoized) procedure to find counts
+        of edges. 
+
+        XXX Answer is not sensible parsing of infinite strings. The procedure runs but is misleading.
 
         >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 4)).split(),return_chart=True, print_trees=False)
-        >>> v.trace_edges()
+        >>> v.count_edges()
         14
         >>> v = parse(('the pigeons are punished' + ( ' and they suffer' * 5)).split(),return_chart=True, print_trees=False)
-        >>> v.trace_edges()
+        >>> v.count_edges()
         42
         """
         if sol is None:
             self._traced = dict()
             s = 0
             for sol in self.solutions(self.topcat):
-                self.trace_edges(sol=sol)
+                self.count_edges(sol=sol)
                 s += self._traced[sol]
             return s
         elif sol in self._traced:
@@ -553,19 +576,21 @@ class Chart(object):
             ps = self.prev[sol]
             if ps:
                 self._traced[sol] = 0
-                for e in self.prev[sol]:
+                for e in ps:
                     probe = Edge(label=sol.label,
                                 left=sol.left,
                                 right=e.left,
                                 needed = (e.label,) + sol.needed,
                                 constraints=sol.constraints)
                     probe = self.find(probe)
-                    self.trace_edges(probe)
-                    self.trace_edges(sol=e)
-                    self._traced[sol] += self._traced[e]*self._traced[probe]
+                    self.count_edges(sol=probe)
+                    self.count_edges(sol=e)
+                    self._traced[sol] += self._traced[e] * self._traced[probe]
             else:
                 self._traced[sol] = 1
 
+
+    
 
 
     def count(self,e):
@@ -619,7 +644,7 @@ class Chart(object):
 
         """
         if not hasattr(self,'_traced'):
-            self.trace_edges()
+            self.count_edges()
         return self._traced[e]
 
 
@@ -645,6 +670,17 @@ class Chart(object):
              r = {e for e in r if self.allcompatible(e.needed[1:],rest)}
         return frozenset(r)
 
+    def trees_debug(self,e):
+        import ipdb; ipdb.set_trace()
+        for t in self.trees(e):
+            print t
+
+
+ 
+
+
+
+
     def trees(self, e):
         """
         Generate the trees that are rooted in edge.
@@ -662,12 +698,25 @@ class Chart(object):
         from math import log10
         v = chart.parse(('the pigeons are punished' + ( ' and they suffer' * 152)).split(),return_chart=True, 
                 print_trees=False,show_chart=False)
-        print log10(v.trace_edges())
+        print log10(v.count_edges())
         87.98857337128997
         ts = v.trees(v.solutions(v.topcat)[0])
         print len((treestring(ts.next()))
         16522
+
+
+        Currently, this does not work when the parse forest is infinite. See `demo_arcs2` in lattice. This
+        has an infinite recursion for C(S,0,4) when the input FSA is
+
+       0 the 1 pigeons 2 are 3  punished   4 (and 5 they 6 suffer 7)
+                             3  punished   7             6 suffer 4
+
+       That is, the final state is 7. 
+
+       S(0,4) does have an infinite yield, so this is not a big surprise. 
+
         """
+
     
 
         prev = self.get_prev(e)
@@ -680,12 +729,12 @@ class Chart(object):
         else:
             yield Tree(e.label)
 
-    def results(self, show_chart=False,trace_edges=False,**kwds):
+    def results(self,**kwds):
         """
         Code for creating results.
         """
         return dict(sols=self.solutions(self.topcat),
-                    n_trees=self.trace_edges(),
+                    n_trees=self.count_edges(),
                     topcat=self.topcat)
         
 
@@ -877,6 +926,21 @@ def edge_summary(v):
     assert len(ps_no_pred) == 0
     return dict(partials= len(ps),completes=len(cs))
     
+
+def augment_prev(prev): #pragma no cover
+    """
+    Create an edge pair that could have produced each of the edges in prev. 
+
+    If features are being used, it may not be exactly the edges that were used, 
+    but will be compatible with them.
+    """
+    def _augment(e,cs):
+        return e,{(Edge(e.label,e.left,c.left,(c.label,) + e.needed,constraints=e.constraints),c) for  c in cs}
+    return dict([_augment(e,cs) for e,cs in prev.items()])
+
+
+
+
 
 
 

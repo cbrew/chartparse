@@ -141,6 +141,20 @@ demo_arcs = map(arcify,"""	0 show 1
 	12 wood 14
 	13 would 14""".split('\n'))
 
+
+demo_arcs2 = map(arcify,"""0 the 1
+	1 pigeons 2
+	2 are 3
+	3 punished 7
+	3 punished 4
+	4 and  5
+	5 they 6 
+	6 suffer 4
+	6 suffer 7""".split("\n"))
+
+
+
+
 class DemoLatticeWords(object):
 	
 
@@ -148,8 +162,8 @@ class DemoLatticeWords(object):
 	Run a chart from a lattice rather than a linear set of words.
 
 	>>> import chart
-	>>> chart.parse(["show", "me","a","movie","where", "the","director",'is','clint', 'eastwood'],topcat='SImp', sep='_', input_source=DemoLatticeWords)
-	['show', 'me', 'a', 'movie', 'where', 'the', 'director', 'is', 'clint', 'eastwood']
+	>>> chart.parse(demo_arcs,topcat='SImp', sep='_', input_source=DemoLatticeWords)
+	[(0, 'show', 1), (1, 'me', 2), (2, 'a', 3), (3, 'movie', 4), (4, 'where', 5), (5, 'the', 6), (6, 'director', 9), (6, 'direct', 7), (6, 'dye', 8), (7, 'or', 9), (8, 'rector', 9), (9, 'is', 10), (10, 'clint', 11), (11, 'eastwood', 14), (11, 'is', 12), (11, 'east', 12), (11, 'is', 13), (12, 'wood', 14), (13, 'would', 14)]
 	Parse 1:
 	SImp
 	_Vp
@@ -176,15 +190,19 @@ class DemoLatticeWords(object):
 	________n eastwood
 	1 parses
 	"""
-	def __init__(self,words):
-		pass
+	def __init__(self,arcs=demo_arcs):
+		self._arcs = arcs
 
+	def arcs(self):
+		return self._arcs
 
 	@property
 	def final_state(self):
-		return demo_arcs[-1][-1]
-	def arcs(self):
-		return demo_arcs
+		"""
+		The final state should be in final position.
+		"""
+		return self._arcs[-1][-1]
+	
 
 
 
