@@ -444,6 +444,9 @@ class Chart(object):
                     self.prev[e] = set()
                     hpush(self.agenda,e)
 
+    def is_lexical(self,e):
+        return e.iscomplete() and len(self.prev[e]) == 0
+
     def find(self,e):
         if e.iscomplete():
             edges = self.completes[e.left]
