@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from collections import namedtuple
 from features import ImmutableCategory as icat
 
@@ -229,3 +230,42 @@ class Edge(namedtuple("Edge", ('label', 'left', 'right', 'needed','constraints')
 
         """
         return hash((self.label, self.left, self.right, self.needed))
+
+
+
+# The idea from Stabler's "Top down recognizers for MGs and MCFGs" calls for the recognition sequence to be represented by
+# a pair of the remaining input string and a priority queue of `indexed atoms`.  In a chart parsing setting, the remaining
+# input string is encoded by the end position of the edge, so the only thing that is needed is the priority queue.
+#
+# The grammar in that paper recognizes a^{i}b^{j}c^{i}d^{j} i,j > 0
+# 
+# S(x0x1x2x3) -> AC(x0,x2)BD(x1,x3)
+# AC(x0x2,x1x3) -> A(x0)C(x1)AC(x2,x3)
+# AC(x0,x1) ->  A(x0)C(x1)
+# BD(x0x2,x1x3) -> B(x0)D(x1)BD(x2,x3)
+# BD(x0,x1) ->  B(x0)D(x1)
+# A(a)
+# B(b)
+# C(c)
+# D(d)
+# 
+# A variable free form of that grammar is that used by Peter Ljunglöf, which is shown below. The fourth
+# field of each rule describes the function that maps the yields of the daughters into the yield of the
+# result.
+
+stab_abcd = [('s', 'S', ['AC','BD'],[[(0,0),(1,0),(0,1),(1,1)]]),   # Stabler notates this as AC(0,2)BC(1,3), which implicitly says that S is 0123 
+             ('ac+','AC',['AC'],[['a',(0,0)],['c',(0,1)]]),
+             ('ac','AC',[],[['a'],['c']]),
+             ('bd+','BD',['BD'],[['b',(0,0)],['d',(0,1)]]),         # putting 'b','d' in signals leaves
+             ('bd','BD',[],[['b'],['d']]),                          # no subconstituents, but does have leaves
+             ]
+
+
+
+
+
+
+
+
+
+

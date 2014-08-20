@@ -152,8 +152,13 @@ demo_arcs2 = map(arcify,"""0 the 1
 	6 suffer 4
 	6 suffer 7""".split("\n"))
 
+demo_arcs_simple = map(arcify,"""0 stuart 1
+	2 and 0
+	1 suffers 2""".split("\n"))
 
 
+
+import networkx as nx
 
 class DemoLatticeWords(object):
 	
@@ -196,10 +201,10 @@ class DemoLatticeWords(object):
 	def arcs(self):
 		return self._arcs
 
-	@property
+
 	def final_state(self):
 		"""
-		The final state should be in final position.
+		The final state should be in final position in the description.
 		"""
 		return self._arcs[-1][-1]
 	

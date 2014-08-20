@@ -106,6 +106,7 @@ from features import ImmutableCategory as icat
 import operator
 import itertools
 import heapq
+import networkx as nx
 
 
 def hpush(heap,item):
@@ -143,7 +144,7 @@ class LinearWords(object):
     def __init__(self, words):
         self.words = words
 
-    @property
+   
     def final_state(self):
         return len(self.words)
 
@@ -213,6 +214,7 @@ class Chart(object):
             self.compat = self.compatible
         else:
             self.compat = operator.eq
+
         
         if run:
             while self.agenda:
@@ -249,12 +251,12 @@ class Chart(object):
         machine whose arcs can be enumerated.
         """
         words = self.setup_words(words)
-        final_state = words.final_state
+        self.final_state = words.final_state()
 
         
 
-        self.partials =  [set() for _ in range(final_state + 1)]
-        self.completes = [set() for _ in range(final_state + 1)]
+        self.partials =  [set() for _ in range(self.final_state + 1)]
+        self.completes = [set() for _ in range(self.final_state + 1)]
 
         for i,w,j in words.arcs():
              hpush(self.agenda,self.lexical(i,w,j))
@@ -544,6 +546,32 @@ class Chart(object):
 
    
 
+    def visit_local_trees(self,visitor, depth=1):
+        """
+        Visit all the local trees.
+        """
+
+        reachable = self.reachable()
+        if depth == 1:
+            for e in reachable:
+                for d1,d2 in self.coprev(e):
+                    triple = (e,d1,d2)
+                    visitor.visit(triple)
+        elif depth==2:
+            for e in reachable:
+                for d1,d2 in self.coprev(e):
+                    for gd11,gd12 in self.coprev(d1):
+                        for gd21,gd22 in self.coprev(d2):
+                            tree = (e,(d1,(gd11,gd12)),(d2,(gd21,gd22)))
+                            visitor.visit(tree)
+
+
+
+
+
+
+
+
 
 
 
@@ -670,10 +698,64 @@ class Chart(object):
              r = {e for e in r if self.allcompatible(e.needed[1:],rest)}
         return frozenset(r)
 
-    def trees_debug(self,e):
-        import ipdb; ipdb.set_trace()
-        for t in self.trees(e):
-            print t
+    def coprev(self,e):
+        return [(self.find(Edge(label=e.label,
+                            left=e.left,
+                            right=c.left,
+                            needed = (c.label,) + e.needed,
+                            constraints=e.constraints)),c) for c in self.prev[e]]
+
+
+
+    def reachable(self,e=None,complete_only=False):
+        """
+        Get all the reachable items. None other
+        than these can produce parses.
+        """
+        if e is None:
+            sols = self.solutions(self.topcat)
+            if sols:
+                e = sols[0]
+            else:
+                return
+        agenda = [e]
+        edges = set()
+        while agenda != []:
+            e = agenda.pop()
+            if e in edges:
+                pass
+            else:
+                edges.add(e)
+                prev = self.get_prev(e)
+                if prev:
+                    for c in prev:
+                        # work out what the partial must be, and find it.
+                        p = Edge(label=e.label,
+                            left=e.left,
+                            right=c.left,
+                            needed = (c.label,) + e.needed,
+                            constraints=e.constraints)
+                        p = self.find(p)
+                        agenda.append(p)
+                        agenda.append(c)
+        if complete_only:
+            edges = {e for e in edges if e.iscomplete()}
+        return edges
+
+
+
+
+
+        
+            
+
+
+
+
+
+
+
+
 
 
  
@@ -681,7 +763,7 @@ class Chart(object):
 
 
 
-    def trees(self, e):
+    def trees(self, e=None):
         """
         Generate the trees that are rooted in edge.
 
@@ -717,17 +799,33 @@ class Chart(object):
 
         """
 
-    
+        if e is None:
+            sols = self.solutions(self.topcat)
+            if sols:
+                e = sols[0]
+            else:
+                return
 
         prev = self.get_prev(e)
         if prev:
             for c in prev:
-                for p in self.somepartials(right=c.left,left=e.left,label=e.label,first=c.label,rest=e.needed):
-                   for left in self.trees(p):
+                # work out what the partial must be, and find it.
+                p = Edge(label=e.label,
+                         left=e.left,
+                         right=c.left,
+                           needed = (c.label,) + e.needed,
+                           constraints=e.constraints)
+                p = self.find(p)
+                for left in self.trees(p):
                         for right in self.trees(c):
                             yield Tree(e.label,left.children + tuple([right]))
+
         else:
             yield Tree(e.label)
+
+
+
+
 
     def results(self,**kwds):
         """
@@ -814,6 +912,25 @@ def treestring(t, tab=0,sep=' '):
         for child in t.children:
             s += treestring(child, tab=tab + 1,sep=sep)
     return s
+
+class GraphBuildingVisitor:
+        def __init__(self):
+            self.vertices = {}
+            self.graph = nx.DiGraph()
+            self._v2e = []
+        def visit(self,triple):
+            for v in triple:
+                if v not in self.vertices:
+                    self.vertices[v] = len(self.vertices)
+            (m,d1,d2) = triple
+            self.graph.add_edge(self.vertices[m],self.vertices[d1])
+            self.graph.add_edge(self.vertices[m],self.vertices[d2])
+
+        @property
+        def v2e(self):
+            if len(self.vertices) != len(self._v2e):
+                self._v2e = dict([(v,k) for k,v in self.vertices.items()])
+            return self._v2e
 
 
 def parse(sentence, verbose=False, topcat='S', grammar=GRAMMAR,sep=' ', input_source=LinearWords, 
